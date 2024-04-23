@@ -8,7 +8,8 @@
 
 ## 步骤
 
-1. 通过 `$profile` 找到 PowerShell 的 profile的位置，但是这个文件不一定存在，可以使用命令 `Test-Path $profile` 进行测试，如果结果为 false，证明没有这个文件，需要创建。
+1. 通过 `$profile` 找到 PowerShell 的 profile的位置，但是这个文件不一定存在。
+   可以使用命令 `Test-Path $profile` 进行测试，如果结果为 false，证明没有这个文件，需要创建。
 2. 通过命令 `New-Item -path $profile -itemtype file -Force` 创建文件。
 3. 找到这个文件，在里面写函数即可，一般位置为 `C:\Users\用户名\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`。
 4. 在文件中定义函数。然后管理员执行 `Set-ExecutionPolicy RemoteSigned`。
