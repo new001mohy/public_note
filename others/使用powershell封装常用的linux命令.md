@@ -42,3 +42,11 @@ function touch {
     }
 }
 ```
+
+### wget
+
+```powershell
+function wget {
+  curl -L -O $args
+}
+```
