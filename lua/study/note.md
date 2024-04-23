@@ -100,3 +100,180 @@ D --> E["判断条件"]
 E -->|仍满足条件| B
 E -->|不再满足条件| F[结束循环]
 ```
+
+### while
+
+```lua
+while(condition)
+do
+  statements
+end
+```
+
+### for
+
+Lua 中for循环有两大类，数值for循环和泛型for循环
+
+#### 数值for循环
+
+```lua
+-- var从exp1变化到exp2，步长为exp3，并执行一次执行体。exp3可选，如果不指定，默认为1。
+for var=exp1,exp2,exp3 do
+  <执行体>
+end
+```
+
+#### 泛型for循环
+
+泛型for循环通过一个迭代器函数来遍历所有值，类似java中的foreach
+
+```lua
+-- 打印数组a的所有值
+-- i是数组索引，v是对应索引的数组元素值
+a = {"a", "b", "c"}
+for i, v in ipairs(a) do
+  print(i, v)
+end
+```
+
+### break & goto
+
+break退出当前循环。
+
+goto语句允许将控制流程无条件地转到被标记的语句处。
+
+```lua
+goto lable
+```
+
+Lable 的格式为：
+
+```lua
+:: Lable ::
+```
+
+使用
+
+```lua
+local a = 1
+:: lable :: print("-- goto lable --")
+
+a = a + 1
+if a < 3 then
+  goto lable
+end
+```
+
+## Lua 流程控制
+
+```mermaid
+flowchart TB
+  a((start))
+
+  b{条件}
+  c[条件语句]
+  d((end))
+style a color:#eee, fill:#f9f
+a ----> b
+b --条件为真--> c
+c ----> d
+b --条件为假--> d
+```
+
+控制结果的条件表达式结果可以是任何值。Lua 认为false和nil为假，true和非nil为真。
+要注意Lua 中的0为true。
+
+```lua
+if(condition)
+then
+  -- condition is true
+else
+  condition is false
+end
+```
+
+```lua
+if(condition1)
+then
+  -- condition1 is true
+elseif(condition2)
+then
+  -- condition2 is true
+else
+  -- condition1 and condition2 both false
+end
+```
+
+## Lua 函数
+
+Lua 函数定义格式：
+
+```lua
+--[[
+optional_function_scope: 该参数是可选的，指定函数为全局函数还是局部函数，未设置默认为全局函数。
+result_params_comma_spearated: 函数返回值，Lua 函数可以返回多个值，每个值以逗号隔开。
+--]]
+optional_function_scope function function_name(arg1, arg2, arg3..., argn)
+  function_body
+  return result_params_comma_spearated
+end
+```
+
+### 可变参数
+
+Lua 函数可以接受可变数目的参数，和C语言类似，在函数参数列表中使用三点`...`表示函数有可变的参数。
+
+```lua
+function add(...)
+ local s = 0
+ for index, value in ipairs({ ... }) 2024-04-24T01:03:26
+  s = s + value
+ end
+ return s
+end
+
+print(add(1, 2, 3, 34, 5, 6))
+```
+
+可以使用`select("#", ...)`来获取可变参数的数量。
+
+## Lua 运算符
+
+### 算术运算符
+
+| 操作符 | 描述     |
+| ------ | -------- |
+| +      | 加法     |
+| -      | 减法     |
+| \*     | 乘法     |
+| /      | 除法     |
+| %      | 取余     |
+| ^      | 乘幂     |
+| -      | 负号     |
+| //     | 整除运算 |
+
+### 关系运算符
+
+| 操作符 | 描述                     |
+| ------ | ------------------------ |
+| ==     | 等于，检测两个值是否相等 |
+| ~=     | 不等于                   |
+| >      | 大于                     |
+| <      | 小于                     |
+| >=     | 大于等于                 |
+| <=     | 小于等于                 |
+
+### 逻辑运算符
+
+| 操作符 | 描述   |
+| ------ | ------ |
+| and    | 逻辑与 |
+| or     | 逻辑或 |
+| not    | 逻辑非 |
+
+### 其他运算符
+
+| 操作符 | 描述                 |
+| ------ | -------------------- |
+| ..     | 连接两个字符串       |
+| #      | 返回字符串或表的长度 |
