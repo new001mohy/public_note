@@ -576,3 +576,182 @@ getmetatable(mytable) -- 返回mymetatable
 | coroutine.status()  | 查看coroutine状态                |
 | coroutine.wrap()    | 创建协同程序，和create功能重复   |
 | coroutine.running() | 返回正在跑的协同程序，返回线程号 |
+
+两个线程交替打印数字
+
+```lua
+local cor1, cor2, num = nil, nil, 0
+
+local function print_0()
+ while true do
+  print(string.format("Thread_0: %d", num))
+  num = num + 1
+  coroutine.yield()
+ end
+end
+
+local function print_1()
+ while true do
+  if num > 100 then
+   os.exit()
+  end
+  print(string.format("Thread_1: %d", num))
+  num = num + 1
+  coroutine.yield()
+ end
+end
+
+cor1 = coroutine.create(print_0)
+cor2 = coroutine.create(print_1)
+
+while true do
+ if coroutine.status(cor1) == "supended" then
+  coroutine.resume(cor1)
+ end
+ if coroutine.status(cor2) == "supended" then
+  coroutine.resume(cor2)
+ end
+end
+```
+
+## Lua 文件 I/O
+
+Lua 读取和处理文件。分为简单模式和完全模式
+
+打开文件的操作语句：
+
+```lua
+io.open(filename[,mode])
+```
+
+| 模式 | 描述                               |
+| ---- | ---------------------------------- |
+| r    | 只读模式打开文件，文件必须存在     |
+| w    | 打开只写文件，清空写               |
+| a    | 追加写                             |
+| r+   | 以可读写方式打开文件，文件必须存在 |
+| w+   | 打开可读写文件，清空写             |
+| a+   | 可读写，追加写                     |
+| b    | 二进制模式                         |
+| +    | 表示对文件可读可写                 |
+
+io.read()可以携带参数
+
+| 模式   | 描述                                |
+| ------ | ----------------------------------- |
+| "\*n"  | 读取一个数字并返回                  |
+| "\*a"  | 从当前位置读取整个文件              |
+| "\*\|" | 默认，读取下一行，在文件末尾返回nil |
+| number | 返回一个指定字符个数的字符串        |
+
+其他的io方法有：
+
+- io.tmpfile(): 返回一个临时文件句柄，该文件以更新模式打开，程序结束时自动删除
+- io.type(file): 返回obj是否是一个可用的文件句柄
+- io.flush()：向文件写入缓冲中的所有数据
+- io.lines(optional file name)：返回一个迭代函数，每次调用将获得文件的一行内容，读到末尾返回nil，但不关闭文件
+
+### 简单模式
+
+简单模式使用标准的IO或使用一个当前输入文件一个当前输入文件。
+
+### 完全模式
+
+当我们需要在同一时间处理多个文件。我们需要使用`file:function_name`来代替`io.function_name`方法。
+
+完全模式的其他方法
+
+- file:seek(optional whence, optional offset)：设置和获取当前文件位置，成功则返回最终的文件位置（按字节），失败则返回nil和错误信息，参数whence值可以是：
+- "set"：从文件头开始
+- "cut"：从当前位置开始【默认】
+- "end"：从文件尾开始
+
+  offset默认为0
+
+## Lua 错误处理
+
+### error 函数
+
+```lua
+error (message [,level])
+
+终止正在执行的函数，并返回message的内容作为错误信息。
+```
+
+level参数指示获得错误的位置：
+
+- level=1：【默认】为调用error位置（文件+行号）
+- level=2：指出哪个调用error的函数的函数
+- level=0：不添加错误位置信息
+
+### pcall和xpcall、debug
+
+Lua 中处理错误，可以使用函数pcall（protected call）来包装需要执行的代码。
+
+```lua
+if pcall(func, ?args) then
+-- 没有错误
+else
+-- 有错误
+end
+```
+
+通常在错误发生时，我们希望获得更多的调试信息，而不只是发生错误的位置。但pcall 返回时，它已经销毁了调用栈的部分内容。
+
+Lua 提供了xpcall函数，xpcall接收第二个参数（一个错误处理函数）。当错误发生时，Lua 会在调用栈展开前调用错误处理函数，就可以在这个函数中使用debug库来获取错误的信息了。
+
+debug库提供了两个通用的错误处理函数：
+
+- debug.debug：提供一个Lua操作符，让用户检查错误的原因
+- debug.traceback：根据调用栈来构建一个扩展的错误消息
+
+## Lua 面向对象
+
+Lua中最基本的结构时table，所以需要使用table来描绘对象的属性。
+
+```lua
+-- 父类
+Phone = { price = 0, name = "", brand = "" }
+
+-- 父类构造函数
+
+function Phone:new(o, price, name, brand)
+o = o or {}
+setmetatable(o, self)
+self.__index = self
+price = price or 0
+name = name or ""
+brand = brand or ""
+return o
+end
+
+-- 父类方法
+function Phone.call()
+print("call ...")
+end
+
+-- 父类对象
+base_class = Phone:new(nil, 1299, "redme", "Xiaomi")
+-- 未重写方法，调用父类的call方法
+base_class:call()
+
+-- 子类
+Xiaomi = Phone:new()
+
+-- 子类构造函数
+function Xiaomi:new(o, price, name, brand)
+o = o or Phone:new(o, price, name, brand)
+setmetatable(o, self)
+self.__index = self
+return o
+end
+
+-- 子类方法
+function Xiaomi:call()
+print("Xiaomi call ...")
+end
+
+xiaomi = Xiaomi:new(nil, 4599, "xiaomi-14", "xiaomi")
+
+xiaomi:call()
+```
