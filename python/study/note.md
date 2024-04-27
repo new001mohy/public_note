@@ -299,3 +299,396 @@ if (n := 10) > 5:
 
 > [!TIP]
 > is 和 == 的区别是：is比较地址值、==比较对应的值是否相等
+
+## Python3 数字
+
+Python中的数字变量在赋值的时候创建对象。
+
+可以使用`del`语句删除一些数字对象的引用。
+
+```python
+del var1\[,var2\[,var3]]
+```
+
+Python支持三种不同的数值类型：
+
+- **整形(int)** ：Python3整形是没有大小限制的，可以当作Long类型使用。布尔是整形的子类型。
+- **浮点型(float)** ：浮点型有整数部分和小数部分组成，浮点型也可以使用科学计数法表示。
+- **复数(complex)** ：复数由实数部分和虚数部分构成，可以使用a+bj，或者complex(a,b)表示，复数的实部a和虚部b都是浮点型。
+
+### 数学函数
+
+| 函数           | 描述                                                   |
+| -------------- | ------------------------------------------------------ |
+| abs(x)         | 返回数字的绝对值                                       |
+| ceil(x)        | 返回数字的向上取整                                     |
+| exp(x)         | 返回e的x次幂(e<sup>x</sup>)                            |
+| fabs(x)        | 返回浮点型是的绝对值                                   |
+| floor(x)       | 返回数字的向下取整                                     |
+| log(x)         | 返回以e为底，x的对数                                   |
+| max(x1,x2,...) | 返回给定参数的最大值                                   |
+| min(x1,x2,...) | 返回给定参数的最小值                                   |
+| modf(x)        | 返回x的整数部分与小数部分，符号与x相同，都以浮点数表示 |
+| pow(x,y)       | x<sup>y</sup>运算的值                                  |
+| round(x\[,n])  | 返回浮点数x的自舍五入值，n为保留的位数                 |
+| sqrt(x)        | 返回数字x的平方根                                      |
+
+### 随机数函数
+
+| 函数                            | 描述                                                                |
+| ------------------------------- | ------------------------------------------------------------------- |
+| choice(seq)                     | 从序列的元素中随机挑选一个元素                                      |
+| randrange(\[start]stop\[,step]) | 从指定范围内，按指定的基数递增的集合中获取一个随机数，基数默认值为1 |
+| random()                        | 随机生成一个实数，在\[1,0)范围内                                    |
+| seed([x])                       | 改变随机数生成器的种子                                              |
+| shuffle(lst)                    | 将序列的所有元素随机排列                                            |
+| uniform(x,y)                    | 随机生成下一个实数，范围在\[x,y]内                                  |
+
+### 三角函数
+
+| 函数       | 描述                                             |
+| ---------- | ------------------------------------------------ |
+| acos(x)    | 返回x的反余弦弧度值                              |
+| asin(x)    | 返回x的反正弦弧度值                              |
+| atan(x)    | 返回x的反正切弧度值                              |
+| atan2(x,y) | 返回给定的x及y坐标值的反正切值                   |
+| cos(x)     | 返回x的弧度的余弦值                              |
+| hypot(x,y) | 返回欧几里得范数 sqrt(x\*x + y\*y)               |
+| sin(x)     | 返回x弧度的正弦值                                |
+| tan(x)     | 返回x弧度的正切值                                |
+| degrees(x) | 将弧度转换为角度，如degrees(math.pi/2), 返回90.0 |
+| radian(x)  | 将角度转为弧度                                   |
+
+### 数学常量
+
+| 常量 | 描述            |
+| ---- | --------------- |
+| pi   | 数学常量pi（Π） |
+| e    | 自然常数        |
+
+## Python3 字符串
+
+Python 不支持单字符类型，单字符在Python中也是作为一个字符串使用。
+Python 访问子字符串，可以使用方括号`[]`来截取子字符串。
+
+Python字符串一行写不完时，使用`\`进行续行。 使用`\r`后面的内容移到字符串开头，并逐一替换开头部分的字符，直至将`\r`后面的内容完全替换完成。
+
+使用`\r`实现百分比进度：
+
+```python
+import time
+
+for i in range(101):
+  print("\r{:3}%".format(i), end = ' ')
+  time.sleep(0.05)
+```
+
+### Python 字符串运算符
+
+| 操作符 | 描述                           |
+| ------ | ------------------------------ |
+| +      | 字符串连接                     |
+| \*     | 重复输出字符串                 |
+| \[]    | 通过索引获取字符串中的字符     |
+| \[:]   | 左闭右开，截取字符串中的一部分 |
+| in     | 字符串中包含特定字符返回True   |
+| not in | 字符串中不包含给定字符返回True |
+| r/R    | 可以避免字符串转义             |
+| %      | 格式化字符串                   |
+
+### f-string
+
+f-string 是3.6之后的版本添加的，称之为字面量格式化字符串。
+
+**f-string** 格式化字符串以`f`开头，后面跟着字符串，字符串中表达式用大括号{}包起来，会将变量或表达式计算后的值替换进去。
+
+### Python 的字符串内建函数
+
+| 函数                               | 描述                                     |
+| ---------------------------------- | ---------------------------------------- |
+| capitalize()                       | 将字符串的第一个字符转为大写             |
+| center(width,fillchar)             | 指定宽度居中字符串，fillchar（默认空格） |
+| count(str,beg=0,end=len(string))   | str在string中出现的次数                  |
+| bytes.decode(encoding="utf-8")     | 返回给定的编码的bytes对象                |
+| encode(encoding="utf-8")           | 解码                                     |
+| endswith(suffix)                   | 是否以suffix结尾                         |
+| expandtabs(tabsize=8)              | 将字符串中的tab转为空格                  |
+| find(str,beg=0,end=len(string))    | str是否在字符串中，有返回索引，没有-1    |
+| index(str,beg=0,end=len(string))   | 和find一样，只不过不在时返回异常         |
+| isalumn()                          | 所有的字符都是字母或数字返回True         |
+| isalpha()                          | 所有字符都是字母或中文                   |
+| isdigit()                          | 都是数字返回True                         |
+| islower()                          | 所有的都是小写                           |
+| isnumeric()                        | 只包含数字字符                           |
+| isspace()                          | 只包含空白，则返回True                   |
+| istitle()                          | 字符串时标题化的                         |
+| isupper()                          | 所有都是大写                             |
+| join()                             | 以指定字符串作为分隔符                   |
+| len(string)                        | 返回字符串长度                           |
+| ljust(width\[,fillchar])           | 返回一个源字符串的左对齐                 |
+| lower()                            | 转换大写为小写                           |
+| lstrip()                           | 截掉左边的空格或指定字符                 |
+| maketrans()                        | 转换字符映射                             |
+| max(str)                           | 返回字符串中最大的字母                   |
+| min(str)                           | 返回字符串中最小的字母                   |
+| replace(old,new\[,max])            | old -> new                               |
+| rfind(str,beg=0,end=len(string))   | 类似find，不过从右边开始                 |
+| rindex(str,beg=0,end=len(string))  | 类似index，从右边开始                    |
+| rjust(width\[,fillchar])           | 返回元字符串的右对齐                     |
+| rstrip()                           | 删除字符串末尾的空格或指定字符           |
+| split(str="",n=string.count(str))  | 以str分隔截取字符串                      |
+| splitlines(\[keepends])            | 按行分隔，keepends为True保留换行符       |
+| startwith(s,beg=0,end=len(string)) | 是否以s开头                              |
+| strip(\[chars])                    | 删除两边空格                             |
+| swapcase()                         | 大小写互相转化                           |
+| title()                            | 标题化字符串                             |
+| translate(table,delete="")         | 字符转换                                 |
+| upper()                            | 小写转大写                               |
+| zfill(width)                       | 返回长度为width的字符串                  |
+| isdecimal()                        | 检测是否只包含十进制字符                 |
+
+## Python3 列表
+
+### 列表函数
+
+| 函数                   | 描述                                 |
+| ---------------------- | ------------------------------------ |
+| len(list)              | 列表元素个数                         |
+| max(list)              | 返回列表最大值                       |
+| min(list)              | 返回列表最小值                       |
+| list(seq)              | 将元组转为列表                       |
+| list.append(obj)       | 在列表末尾添加新的对象               |
+| list.count(obj)        | 统计某个元素在列表中出现的次数       |
+| list.extend(seq)       | 在列表末尾一次性追加另一个序列中的值 |
+| list.index(obj)        | 从列表中找出第一个匹配项的索引       |
+| list.insert(index,obj) | 将对象插入列表                       |
+| list.pop(\[index=-1])  | 移除列表中的元素，并返回该元素的值   |
+| list.remove(obj)       | 移除列表中某个值的第一个匹配项       |
+| list.reverse()         | 反向列表中的元素                     |
+| list.sort()            | 列表排序                             |
+| list.clear()           | 清空列表                             |
+| list.copy()            | 复制列表                             |
+
+## Python3 元组
+
+Python 的元组与列表类似，不同之处在于元组的元素不能修改。
+元组使用小括号`()`，列表使用方括号`[]`。
+
+元组中只包含一个元素时，需要在元素后面添加逗号`,`，否则括号会被当作运算符使用。
+
+## Python3 字典
+
+字典的键必须是唯一的，但值不必。
+
+使用`{}`或内置函数`dict()`创建字典。
+
+使用`del`可以删除单一元素也能清空字典。
+
+```python
+# 删除单一元素
+del tinydict['key']
+
+# 清空字典
+tinydict.clear()
+
+# 删除字典
+del tinydict
+```
+
+### 字典函数
+
+| 函数                              | 描述                                      |
+| --------------------------------- | ----------------------------------------- |
+| len(dict)                         | 字典元素的个数                            |
+| str(dict)                         | 输出字典的字符串表示                      |
+| type(dict)                        | 返回类型                                  |
+| dict.clear()                      | 清空字典                                  |
+| dict.copy()                       | 返回一个字典的潜复制                      |
+| dict.fromkeys()                   | 创建一个字典，val为字典所有键对应的初始值 |
+| dict.get(key, default=None)       | 返回指定键的值                            |
+| key in dict                       | 键在字典中返回True                        |
+| dict.items()                      | 以列表返回一个视图对象                    |
+| dict.keys()                       | 返回一个key视图对象                       |
+| dict.setdefault(key,default=None) | 和get类似，键不存则添加                   |
+| dict.update(dict2)                | 把字典dict2的键值对更新到dict里           |
+| dict.values()                     | 返回一个视图对象                          |
+| pop(key\[,default])               | 删除字典key对应的值，返回被删除的值       |
+| popitem()                         | 返回并删除字典中的最后一对键和值          |
+
+## Python3 集合
+
+集合可以使用`{}`或`set()`创建集合，创建一个空集合必须使用`set()`而不是`{}`，因为`{}`是用来创建一个空字典。
+
+### 集合函数
+
+| 方法                          | 描述                                         |
+| ----------------------------- | -------------------------------------------- |
+| add()                         | 添加元素                                     |
+| clear()                       | 清空集合                                     |
+| copy()                        | 拷贝集合                                     |
+| difference()                  | 返回多个集合的差集                           |
+| difference_update()           | 移除集合的元素                               |
+| discard()                     | 删除集合中指定的元素                         |
+| intersection()                | 返回集合的交集                               |
+| intersection_update()         | 返回集合的交集                               |
+| isdisjoint()                  | 判断两个集合是否包含相同的元素               |
+| issubset()                    | 判断指定集合是否为该方法参数集合的子集       |
+| issuperset()                  | 判断该方法的参数集合是否为指定集合的子集     |
+| pop()                         | 随机移除元素                                 |
+| remove()                      | 移除指定元素                                 |
+| symmetric_difference()        | 返回两个集合中不重复的元素集合               |
+| symmetric_difference_update() | 移除集合中另一个集合相同元素，不同的元素插入 |
+| union()                       | 返回两个集合的并集                           |
+| update()                      | 给集合添加元素                               |
+| len()                         | 计算集合元素的个数                           |
+
+## Python3 条件控制
+
+```mermaid
+flowchart TB
+a((start))
+b{条件}
+c[条件代码]
+d((end))
+
+a -->b
+b --条件为真-->c
+c-->d
+b --条件为假-->d
+```
+
+### if-elif-else
+
+```python
+if condition1:
+ # sth
+elif condition2:
+ # sth
+else:
+ # sth
+```
+
+### match...case
+
+Python3.10 增加了`match...case`的条件判断，不需要使用一连串的`if-else`来判断了。
+match 后的对象会依次与 case 后的内容进行匹配，如果匹配成功，则执行匹配到的表达式，否则直接跳过，`_`可以匹配一切。
+
+```python
+match subject:
+  case <pattern_1>:
+    <action_1>
+  case <pattern_2>:
+    <action_2>
+  case <pattern_3>|<pattern_4>|<pattern_5>:
+    <action_3>
+  case _:
+    <action_default>
+```
+
+## Python3 循环语句
+
+Python 中的循环语句有 for 和 while。
+
+### while
+
+```python
+while condition:
+  action
+else:
+ # 如果while后面的条件为False时，则执行else的语句块
+```
+
+### 简单语句组
+
+类似if语句的语法，如果while循环体中只有一条语句，你可以将该语句与while写在同一行中。
+
+```python
+flag = 1
+while(flag): print("hello world")
+```
+
+### for语句
+
+Python for 循环可以遍历任何可迭代对象，如一个列表或者一个字符串。
+
+```python
+for val in seq:
+ <statements>
+else:
+  # 循环执行完毕会执行else的语句，如果在循环过程中遇到了break语句，则会中断循环，也不会执行else子句。
+ <statements>
+```
+
+### range() 函数
+
+如果想遍历数字序列，可以使用内置的range()函数，它可以生成序列。
+
+```python
+for i in range(5):
+  print(i)
+...
+0
+1
+2
+3
+4
+```
+
+也可以使用range()指定区间和增量。
+
+```python
+for i in range(1, 10, 2):
+  print(i)
+...
+1
+3
+5
+7
+9
+```
+
+### break和continue语句
+
+break跳出循环，continue跳过本次循环。
+
+### pass 语句
+
+Python pass 是空语句，是为了保持程序结构的完整性。
+pass不做任何的事情，一般用作占位语句。
+
+### end关键字
+
+end可以用于将结果输出到同一行，或者在输出结果的末尾添加不同的字符。
+
+```python
+print(b, end = ',')
+```
+
+## Python3 推导式
+
+Python 推导式是一种独特的数据处理方式，可以从一个数据序列构建另一个新的数据序列的结构体。功能很像Java的Stream操作。
+
+Python 支持的各种数据结果的推导式：
+
+- 列表(list)推导式
+- 字典(dict)推导式
+- 集合(set)推导式
+- 元组(tuple)推导式
+
+### 列表推导式
+
+```python
+[表达式 for 变量 列表]
+[out_exp_res for out_exp in input_list]
+
+或者
+
+[表达式 for 变量 in 列表 if 条件]
+[out_exp_res for out_exp in input_list if condition]
+```
+
+- out_exp_res：列表生成元素表达式，可以是有返回值的函数。
+- for out_exp in input_list：迭代input_list将out_exp传入out_exp_res表达式中。
+- if condition：条件语句，可以过滤列表中不符合条件的值。
+
+### 字典推导式
