@@ -692,3 +692,212 @@ Python 支持的各种数据结果的推导式：
 - if condition：条件语句，可以过滤列表中不符合条件的值。
 
 ### 字典推导式
+
+```python
+{key:value for value in in collection if condition}
+```
+
+### 集合推导式
+
+```python
+{expression for item in Sequence if conditional}
+
+### 元组推导式（生成器表达式）
+
+元组推导式可以使用range区间、元组、列表、字典和集合等数据类型，快速生成一个满足指定需求的元组。
+```
+
+```python
+(expression for item in Sequence if conditional)
+```
+
+```python
+a = (x for x in range(1,10)) # 返回一个生成器对象
+
+tuple(a) # 直接将生成器对象转换成元组
+```
+
+## Python3 迭代器与生成器
+
+### 迭代器
+
+迭代器是一个可以记住遍历位置的对象。迭代器对象从集合的第一个元素开始，直到所有的元素被访问完结束，迭代器只能往前不会后退。
+
+迭代器有两个基本的方法：`iter()` 和 `next()`。字符串、列表或元组都可以创建迭代器。
+
+```python
+l = [1,2,3,4]
+it = iter(l)
+for x in it:
+  print(x)
+
+while True:
+  try:
+    print(next(it))
+  except StopIteration:
+    break
+```
+
+### 创建一个迭代器
+
+把一个类作为一个迭代器使用需要在类中实现两个方法：`__iter__()`与`__next__()`。
+
+### StopIteration
+
+StopIteration 异常用于标识迭代的完成，防止出现无限的情况。
+
+### 生成器
+
+在Python中，使用`yield`的函数被成为生成器(generator)
+
+`yield` 是一个关键字，用于定义生成器函数，生成器函数是一种特殊的函数，可以在迭代过程中逐步产生值，而不是一次性返回所有结果。
+
+简单理解生成器就是一个迭代器，当在生成器中使用`yield`语句时，函数的执行将会暂停，并将`yield`后面的表达式作为当前迭代的值返回。
+
+然后，每次调用生成器的`next()` 方法或使用`for` 循环进行迭代时，函数会从上次暂停的地方继续执行，直到再次遇到`yield`语句。
+
+## Python3 函数
+
+```python
+def func_name(参数列表):
+  函数体
+```
+
+### 参数
+
+- 必须参数
+
+  必须参数必须以正确的顺序传入函数。调用时的数量必须和声明时的一样。
+
+```python
+def add(x, y):
+  return x + y
+
+add(1, 2)
+```
+
+- 关键字参数
+
+  关键字参数允许函数调用时参数的顺序与声明不一致，在调用时使用参数名。
+
+```python
+def add(x, y):
+  return x + y
+
+add(y = 1, x = 2)
+```
+
+- 默认参数
+
+  函数定义时可以指定参数默认值，函数调用时如果没有传则使用默认参数。
+
+```python
+def add(x, y = 1):
+  return x + y
+
+add(x = 2)
+```
+
+- 不定长参数
+
+加了`*`的参数会以元组(tuple)的形式导入，加了`**`的参数会以字典的形式导入。
+
+声明函数时，参数中星号`*`可以单独出现，如果单独出现`*`，则`*`后的参数必须使用关键字导入。
+
+### 匿名函数
+
+Python 使用 `lambda` 来创建匿名函数。
+
+```python
+lambda [arg1 [,arg2,......argn]] : expression
+```
+
+```python
+x = lambda a : a + 101
+
+sum = lambda arg1, arg2 : arg1 + arg2
+```
+
+可以使用函数封装匿名函数，这样可以创建不同的逻辑。
+
+### 强制位置参数
+
+Python3.8新增了一个函数形参语法`/`, 在`/`之前的必须使用位置参数。
+
+## Python3 装饰器
+
+装饰器（decorators）是Python中的一种高级功能，它允许你动态地修改函数或类的行为。
+
+装饰器是一种函数，它接受一个函数作为参数，并返回一个新的函数或修改原来的函数。
+
+装饰器的语法使用`@decorators_name`来应用在函数或方法上。
+
+Python还提供了一些内置的装饰器，比如`@staticmethod` 和 `@classmethod`，用来定义静态方法和类方法。
+
+**装饰器的应用场景**
+
+- 日志记录：装饰器可用于记录函数的调用信息，参数和返回值。
+- 性能分析：可以使用装饰器来测量函数的的执行时间
+- 权限控制：装饰器可用于限制对某些函数的访问权限
+- 缓存：装饰器可以实现缓存函数的结果，以提高性能。
+
+**基本语法**
+
+```python
+def decorator_function(original_function):
+  def wrapper(*args, **kwargs):
+    # 调用原始函数之前增强
+    before_call_code()
+
+    result = original_function(*args, **kwargs)
+
+    # 调用原始函数之后增强
+    after_call_code()
+
+    return result
+  return wrapper
+
+# 使用装饰器
+@decorator_function
+def target_function(arg1, arg2):
+  pass
+
+```
+
+**带参数的装饰器**
+
+```python
+def repeat(n):
+  def decorator(func):
+    def wrapper(*args, **kwargs):
+      before_call_code()
+      result = func(*args, **kwargs)
+      after_call_code()
+      return result
+    return wrapper
+  return decorator
+```
+
+**类装饰器**
+
+除了函数装饰器，Python还支持类装饰器，类装饰器是包含`__call__` 方法的类，它接收一个函数作为参数，并返回一个新的函数。
+
+```python
+class DecoratorClass:
+  def __init__(self, func):
+    self.func = func
+
+  def __call__(self, *args, **kwargs):
+    before_call_code()
+    result =self.func(*args, **kwargs)
+    after_call_code()
+    return result
+```
+
+## Python3 模块
+
+### `__name__` 属性
+
+一个模块被另一个程序第一次引入时，其主程序将运行。弱国我们想在模块被引入时，模块中的某一程序块不执行，我们可以用`__name__`属性来使该程序块仅在自身运行时运行。
+
+每个模块都有一个**name**属性，当其值是'\_\_main\_\_'时，表明该模块自身在运行，否则是被引入。
