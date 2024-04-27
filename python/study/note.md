@@ -901,3 +901,328 @@ class DecoratorClass:
 一个模块被另一个程序第一次引入时，其主程序将运行。弱国我们想在模块被引入时，模块中的某一程序块不执行，我们可以用`__name__`属性来使该程序块仅在自身运行时运行。
 
 每个模块都有一个**name**属性，当其值是'\_\_main\_\_'时，表明该模块自身在运行，否则是被引入。
+
+## Python3 输入和输出
+
+- str()：函数返回一个用户易读的表达形式。
+- repr()：产生一个解释器易读的表达形式。
+
+### 读取键盘输入
+
+`input()`
+
+### 读写文件
+
+`open(filename, mode)`
+
+| 模式 | 描述                               |
+| ---- | ---------------------------------- |
+| r    | 只读方式，指针在文件开头。默认模式 |
+| rb   | 只读，以二进制打开文件             |
+| r+   | 打开文件用于读写                   |
+| rb+  | 以二进制读写文件                   |
+| w    | 文件不存在则创建，存在则覆盖写     |
+| wb   | 二进制覆盖写                       |
+| w+   | 覆盖读写                           |
+| wb+  | 二进制覆盖读写                     |
+| a    | 追加写                             |
+| ab   | 二级制追加写                       |
+| a+   | 追加读写                           |
+| ab+  | 二进制追加读写                     |
+
+`f.read([size])`
+
+读取文件的内容，size被忽略或者为负，该文件的所有内容都将被读取并且返回。
+
+`f.readline()`
+
+f.readline()会从文件中读取单独的一行，如果返回一个空字符串，说明已经读取到最后一行。
+
+`f.readlines()`
+
+f.readlines()将返回该文件中包含的所有行。
+
+`f.write()`
+
+f.write(string)将string写入到文件中，然后返回写入的字符数。
+
+`f.tell()`
+
+f.tell()返回文件当前的指针
+
+`f.seek()`
+
+如果要改变文件指针当前的位置，可以使用f.seek(offset, from_what)。
+
+- seek(x,0)：从文件首行首字符开始移动x个字符。
+- seek(x,1)：表示从当前位置往后移动x个字符。
+- seek(-x,2)：从文件结尾往前移动x个字符。
+
+`f.close()`
+
+关闭文件并释放系统的资源。
+
+当处理一个文件对象时，使用 with 关键字是非常好的方式。在结束后会正确的关闭文件。
+
+```python
+with open('file_name', 'r') as f:
+  read_data = f.read()
+```
+
+### pickle 模块
+
+Python 的 pickle模块实现了基本数据序列和反序列化。
+
+通过pickle的模块序列化操作，可以将程序中运行的对象信息保存到文件中，永久存储。
+
+通过pickle模块的反序列化操作，我们能够从文件中创建上一次程序保存的对象。
+
+```python
+pickle.dump(obj,file, [,protocol])
+
+x = pickle.load(file)
+```
+
+## Python3 file
+
+open()方法打开一个文件，并返回一个文件对象。
+
+```python
+open(file, mode='r', buffering=-1,encoding=None,errors=None, newline=None,clossfd=True,opener=None)
+```
+
+- file：必须，文件路径
+- mode：可选，文件打开模式
+- buffering：设置缓冲
+- encoding：一般utf8
+- errors：报错级别
+- newline：区分换行符
+- closefd：传入的file参数类型
+- opener：设置自定义开启器，开启器的返回值必须是一个打开的文件描述符。
+
+### file对象
+
+| 方法               | 描述                                                    |
+| ------------------ | ------------------------------------------------------- |
+| file.close()       | 关闭文件，释放系统资源                                  |
+| file.flush()       | 强制将缓冲区内容写入文件                                |
+| file.fileno()      | 返回一个整型的文件描述符，可以用在os.read方法等底层操作 |
+| file.isatty()      | 如果文件连接到一个终端设备返回True                      |
+| file.read(\[size]) | 从文件读取指定的字节数                                  |
+| file.readline()    | 整行读取                                                |
+| file.readlines()   | 读取所有行，并返回列表                                  |
+| file.seek(offset)  | 移动文件读取指针到指定位置                              |
+| file.tell()        | 返回文件当前位置                                        |
+| file.truncate()    | 从文件的首行首字符开始截断                              |
+| file.write(str)    | 将字符串写入文件，返回的是写入的字符串长度              |
+| file.writelines()  | 向文件写入一个序列字符串列表，需要自己加入换行          |
+
+## Python3 OS 文件/目录
+
+| 方法                             | 描述                                      |
+| -------------------------------- | ----------------------------------------- |
+| os.access(path,mode)             | 校验权限模式                              |
+| os.chdir(path)                   | 改变当前工作目录                          |
+| os.chflags(path,flags)           | 设置路径的标记为数字标记                  |
+| os.chmod(path,mode)              | 更改权限                                  |
+| os.chown(path)                   | 更改文件的所有者                          |
+| os.chroot(path)                  | 改变当前进程的根目录                      |
+| os.close(fd)                     | 关闭文件描述符fd                          |
+| os.closerange(fd_low, fd_high)   | 关闭low->high的描述符                     |
+| os.dup(fd)                       | 复制文件描述符fd                          |
+| os.dup2(fd,fd2)                  | 将一个文件描述符fd复制到另一个fd2         |
+| os.fchdir(fd)                    | 通过文件描述符改变当前工作目录            |
+| os.fchmod(fd, mode)              | 改变一个文件的访问权限                    |
+| os.fchown(fd,uid,gid)            | 修改一个文件的所有权                      |
+| os.fdatasync(fd)                 | 强制将文件写入磁盘                        |
+| os,fdopen(fd\[,mode\[,bufsize]]) | 通过fd创建一个文件对象                    |
+| os.fpathconf(fd,name)            | 返回一个打开的文件按系统配置信息          |
+| os.fstat(fd)                     | 返回文件描述符fd的状态                    |
+| os.fstatvfs(fd)                  | 返回包含fd的文件的文件系统的信息          |
+| os.fsync(fd)                     | 强制将文件描述符为fd的文件写入硬盘        |
+| os.ftruncate(fd,len)             | 裁剪fd对应的文件                          |
+| os.getcwd()                      | 返回当前工作目录                          |
+| os.getcwdb()                     | 返回一个当前工作目录的unicode对象         |
+| os.isatty(fd)                    | 如果fd是打开的，同时与tty连接则返回True   |
+| os.lchflags(path,flags)          | 设置路径的标记为数字标记                  |
+| os.lchmod(path,mode)             | 修改连接文件权限                          |
+| os.lchown(path,uid,gid)          | 更改文件所有者，类似chown，但是不追踪链接 |
+| os.link(src, dst)                | 创建硬链接，dst->src                      |
+| os.listdir(path)                 | 返回path指定的文件夹包含文件或文件夹列表  |
+| os.lseek(fd,pos,how)             | 设置fd当前位置为pos，how方式修改          |
+| os.lstat(path)                   | 像stat()，但是没有软连接                  |
+| os.major(device)                 | 从原始的设备号中提取major号               |
+| os.makedev(major,minor)          | 以major和minor设备号组成一个原始设备号    |
+| os.makedirs(path)                | 递归文件夹创建函数                        |
+| os.minor(device)                 | 从原始设备号中提取minor号                 |
+| os.mkdir(path)                   | 创建文件夹                                |
+| os.mkfifo(path)                  | 创建命名管道                              |
+| os.mknod(filename)               | 创建一个名为filename文件系统节点          |
+| os.open(file,flags\[,mode])      | 打开一个文件                              |
+| os.openty()                      | 打开一个新的伪终端                        |
+| os.pathconf(path,name)           | 返回相关文件的系统配置信息                |
+| os.pipe()                        | 创建一个管道                              |
+| os.popen(command)                | 从一个command打开一个管道                 |
+| os.read(fd,n)                    | 从fd中读取最多n个字节                     |
+| os.readlink(path)                | 返回软链接指向的文件                      |
+| os.remove(path)                  | 删除路径为path的文件                      |
+| os.removedirs(path)              | 递归删除目录                              |
+| os.rename(src,dst)               | 重命名文件或目录                          |
+| os.renames(old,new)              | 递归对目录进行更名                        |
+| os.rmdir(path)                   | 删除一个指定的空目录                      |
+| os.stat(path)                    | 获取path指定的路径的信息                  |
+| os.stat_float_times()            | 决定stat_result是否以float对象显示时间戳  |
+| os.statvfs(path)                 | 获取指定路径的文件系统统计信息            |
+| os.symlink(src,dst)              | 创建一个软链接                            |
+| os.tcgetpgrp(fd)                 | 返回与终端fd关联的进程组                  |
+| os.tcsetpgrp(fd,pg)              | 设置fd关联的进程组为pg                    |
+| os.ttyname(fd)                   | 返回一个字符串，表示与fd关联的终端设备    |
+| os.unlink(path)                  | 删除文件路径                              |
+| os.utime(path,times)             | 返回指定的path文件的访问和修改的时间      |
+| os.write(fd,str)                 | 写入字符串到文件描述符fd中                |
+| os.path                          | 获取文件的属性信息                        |
+| os.pardir()                      | 返回当前的父目录，以字符串形式显示目录名  |
+| os.replace()                     | 重命名文件或目录                          |
+
+## Python3 错误和异常
+
+### try-finally
+
+```python
+try:
+  执行代码
+except Exception as e:
+  发生异常时执行的代码
+else:
+  没有异常时执行的代码
+finally:
+  无论是否异常都会执行
+```
+
+### 抛出异常
+
+Python 使用raise语句抛出一个指定的异常。
+
+`raise [Exception [,args[,traceback]]]`
+
+### 用户自定义异常
+
+可以创建一个新的异常类，异常类继承自`Exception`类，可以直接继承，或者间接继承。
+
+```python
+class ServiceException(Exception):
+  def __init__(self,value):
+    self.value = value
+
+  def __str__(self):
+    return repr(self.value)
+```
+
+如果一个异常在try子句里而又没有任何的except捕获，那么这个异常会在finally子句执行后被抛出。
+
+### with 关键字
+
+Python 中的`with`语句用于异常处理，封装了`try...except...finally`编码范式。
+
+## Python3 面向对象
+
+```python
+class People:
+  name = ''
+  # 私有属性
+  __price = 0
+
+  def __init__(self,n,p):
+    self.name = n
+    self.__price = p
+
+  def speak(self):
+    print(self.name)
+
+  # 单继承
+  class Student(People):
+    grade = ''
+
+    def __init__(self,n,p,g):
+      # 调用父类的构造函数
+      People.__init__(self,n,p)
+      self.grade = g
+
+    # 覆写父类的方法
+    def speak(self):
+      print(self.grade)
+
+  # 多继承
+  class Teacher(People, Object):
+    clazz = ''
+
+    def __init__(self,n,p,c):
+      People.__init__(self,n,p)
+      Object.__init__(self,p)
+      self.clazz = c
+```
+
+子类如果未重写父类的方法，调用方法时会根据父类的顺序，从左向右找对应的方法。
+
+### 类属性与方法
+
+类的私有属性：`__private_attrs`：两个下划线开头，声明该属性为私有。
+类的私有方法：`__private_func`：两个下划线开头，声明该方法为私有。
+
+### 类的专有方法
+
+| 方法            | 描述                       |
+| --------------- | -------------------------- |
+| \_\_init\_\_    | 构造函数，在生成对象时调用 |
+| \_\_del\_\_     | 析构函数，释放对象时调用   |
+| \_\_repr\_\_    | 打印转换                   |
+| \_\_setitem\_\_ | 按照索引进行复制           |
+| \_\_getitem\_\_ | 按照索引获取值             |
+| \_\_len\_\_     | 获得长度                   |
+| \_\_cmp\_\_     | 比较运算                   |
+| \_\_call\_\_    | 函数调用                   |
+| \_\_add\_\_     | 加运算                     |
+| \_\_sub\_\_     | 减运算                     |
+| \_\_mul\_\_     | 乘运算                     |
+| \_\_truediv\_\_ | 除运算                     |
+| \_\_mod\_\_     | 求余运算                   |
+| \_\_pow\_\_     | 乘方                       |
+
+### global 和 nonlocal关键字
+
+当内部作用域想修改外部作用域的变量时，要使用global 和 nonlocal 关键字。
+
+```python
+num = 1
+def fun1():
+  global num
+  print(num)
+  num = 123
+```
+
+想要修改嵌套作用域要使用nonlocal关键字。
+
+```python
+def outer():
+  num = 10
+  print(num)
+  def inner():
+    nonlocal num
+    num = 102
+    print(num)
+  inner()
+  print(num)
+outer()
+```
+
+## Python3 标准库概览
+
+- os模块：与操作系统交互
+- sys模块：与Python解释器和系统相关的功能
+- time模块：time模块提供了处理时间的函数
+- datetime模块：提供了更高级的日期和时间处理函数
+- random模块：生成随机数的函数
+- math模块：提供了数学函数
+- re模块：正则表达式处理函数
+- json模块：JSON编码和解码函数
+- urllib模块：提供了访问翁爷和处理URL的功能
