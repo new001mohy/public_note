@@ -1429,3 +1429,156 @@ match 和 search 是匹配一次，findall是匹配所有。
 ### re.split
 
 split 方法按照能够匹配的子串将字符串分割后返回列表。
+
+## Python3 SMTP 发送邮件
+
+```python
+import smtplib
+
+smtpObj = smtplib.SMTP( [host [,port [, local_hostname]]] )
+```
+
+参数说明
+
+- host：SMTP 服务器主机，可以指定主机的ip地址或者域名，这个是可选参数。
+- port：如果提供了host参数，需要指定SMTP服务使用的端口号，一般情况下SMTP端口号为25。
+- local_hostname：如果SMTP在你的本机上，只需要指定为localhost即可。
+
+Python SMTP对象使用sendmail方法发送邮件。
+
+```python
+ SMTP.sendmail(form_addr, to_addrs, msg[,mail_options, rcpt_options])
+```
+
+参数说明
+
+- form_addr：邮件发送者地址
+- to_addrs：字符串列表，邮件发送地址
+- msg：发送消息
+
+发送邮件简单的类型
+
+```python
+import smtplib
+
+from email.mime.text import MIMEText
+from email.header import Header
+
+# 使用第三方SMTP服务
+mail_host = "smtp.XXX.com"
+mail_user = 'from@from.com' # 用户名
+mail_password = "XXXXXX"    # 对应的密钥
+receivers = ['12321312.receiver.com'] # 接收邮件
+
+# 3个参数，第一个为文本内容，第二个是plain设置文本格式，第三个utf-8设置编码
+message = MIMEText('Python 邮件发送测试...','plain', 'utf-8')
+# 发送html格式
+'''
+html_msg = """
+<p>hello world</p>
+
+"""
+
+'''
+# message = MIMEText(html_msg, 'html', 'utf-8')
+message['From'] = Header('发送者', 'utf-8')
+message['To'] = Header('接收者', 'utf-8')
+
+subject = 'SMTP 邮件主题'
+message["Subject"] = Header(subject, 'utf-8')
+
+try:
+
+  smtpObj = smtp.SMTP()
+  smtpObj.connect(mail_host, 25)
+  smtpObj.login(mail_user, mail_password)
+  smtpObj.sendmail(mail_user, receivers, message.as_string())
+
+except smtplib.SMTPException:
+  print("发送邮件失败")
+```
+
+发送带附件的邮件
+
+发送带附件的邮件，首先要创建MIMEMultipart()实例，然后构造附件，如果有多个附件，可依次构造，最后利用smtplib.smtp发送。
+
+```python
+import smtplib
+
+from email.mime.text import MIMEText
+from email.header import Header
+from email.mime.multipart import MIMEMultipart
+
+# 使用第三方SMTP服务
+mail_host = "smtp.XXX.com"
+mail_user = 'from@from.com' # 用户名
+mail_password = "XXXXXX"    # 对应的密钥
+receivers = ['12321312.receiver.com'] # 接收邮件
+
+# 创建一个带附件的实例
+message = MIMEMultipart()
+message['From'] = Header('发送者名称', 'utf-8')
+message['To'] = Header('接收者', utf-8)
+subject = "Python SMTP 邮件测试"
+message['Subject'] = Header(subject, 'utf-8')
+
+# 邮件正文内容
+message.attach(MIMEText('Python 邮件发送测试...', 'plain', 'utf-8'))
+att1 = MIMEText(open('text.txt', 'rb').read(), 'base64', 'utf-8')
+att1["Context-Type"] = "application/octet-stream"
+# filename可以任意写，写什么邮件中就显示什么名称
+att1["Content-Disposition"] = "attachment; filename=test.txt"
+message.attach(att1)
+
+try:
+
+  smtpObj = smtp.SMTP()
+  smtpObj.connect(mail_host, 25)
+  smtpObj.login(mail_user, mail_password)
+  smtpObj.sendmail(mail_user, receivers, message.as_string())
+
+except smtplib.SMTPException:
+  print("发送邮件失败")
+
+```
+
+## Python3 多线程
+
+### 线程模块
+
+- threading.current_thread()：返回当前的线程变量
+- threading.enumerate()：返回一个包含正在运行的线程的列表。正在运行指线程启动后，结束前的线程。
+- threading.active_count()：返回正在运行的线程数量。
+- threading.Thread(target,args=(),kwargs=(),daemon=None)
+
+  - 创建Thread类的实例
+  - target：线程将要执行的目标函数
+  - args：目标函数的参数，以元组形式传播
+  - kwargs：目标函数的关键字参数，以字典形式传递
+  - daemon：指定线程是否为守护线程。
+
+## pip
+
+查看是否安装
+
+`pip --version`
+
+安装
+
+`pip install some-package-name`
+
+卸载
+
+`pip uninstall some-package-name`
+
+查看已经安装的软件包
+
+`pip list`
+
+导出当前Python环境的配置
+
+`pip freeze > requirements.txt`
+
+创建相同的环境
+
+`pip install -r requirements.txt`
