@@ -76,6 +76,10 @@
     - [匿名函数](#匿名函数)
     - [强制位置参数](#强制位置参数)
   - [Python3 装饰器](#python3-装饰器)
+    - [装饰器的应用场景](#装饰器的应用场景)
+      - [基本语法](#基本语法)
+      - [带参数的装饰器](#带参数的装饰器)
+      - [类装饰器](#类装饰器)
   - [Python3 模块](#python3-模块)
     - [`__name__` 属性](#__name__-属性)
   - [Python3 输入和输出](#python3-输入和输出)
@@ -109,6 +113,13 @@
   - [Python3 多线程](#python3-多线程)
     - [线程模块](#线程模块)
   - [pip](#pip)
+  - [Python 并发编程](#python-并发编程)
+  - [枚举(enum)](#枚举enum)
+  - [字符串格式化](#字符串格式化)
+    - [%操作符](#操作符)
+    - [format()方法](#format方法)
+    - [f-string用法](#f-string用法)
+    - [类型标注](#类型标注)
 
 [toc]
 
@@ -432,14 +443,14 @@ Python支持三种不同的数值类型：
 | -------------- | ------------------------------------------------------ |
 | abs(x)         | 返回数字的绝对值                                       |
 | ceil(x)        | 返回数字的向上取整                                     |
-| exp(x)         | 返回e的x次幂(e<sup>x</sup>)                            |
+| exp(x)         | 返回e的x次幂(e^x^)                                     |
 | fabs(x)        | 返回浮点型是的绝对值                                   |
 | floor(x)       | 返回数字的向下取整                                     |
 | log(x)         | 返回以e为底，x的对数                                   |
 | max(x1,x2,...) | 返回给定参数的最大值                                   |
 | min(x1,x2,...) | 返回给定参数的最小值                                   |
 | modf(x)        | 返回x的整数部分与小数部分，符号与x相同，都以浮点数表示 |
-| pow(x,y)       | x<sup>y</sup>运算的值                                  |
+| pow(x,y)       | x^y^运算的值                                           |
 | round(x\[,n])  | 返回浮点数x的自舍五入值，n为保留的位数                 |
 | sqrt(x)        | 返回数字x的平方根                                      |
 
@@ -944,14 +955,14 @@ Python3.8新增了一个函数形参语法`/`, 在`/`之前的必须使用位置
 
 Python还提供了一些内置的装饰器，比如`@staticmethod` 和 `@classmethod`，用来定义静态方法和类方法。
 
-**装饰器的应用场景**
+### 装饰器的应用场景
 
 - 日志记录：装饰器可用于记录函数的调用信息，参数和返回值。
 - 性能分析：可以使用装饰器来测量函数的的执行时间
 - 权限控制：装饰器可用于限制对某些函数的访问权限
 - 缓存：装饰器可以实现缓存函数的结果，以提高性能。
 
-**基本语法**
+#### 基本语法
 
 ```python
 def decorator_function(original_function):
@@ -974,7 +985,7 @@ def target_function(arg1, arg2):
 
 ```
 
-**带参数的装饰器**
+#### 带参数的装饰器
 
 ```python
 def repeat(n):
@@ -988,7 +999,7 @@ def repeat(n):
   return decorator
 ```
 
-**类装饰器**
+#### 类装饰器
 
 除了函数装饰器，Python还支持类装饰器，类装饰器是包含`__call__` 方法的类，它接收一个函数作为参数，并返回一个新的函数。
 
@@ -1597,8 +1608,192 @@ except smtplib.SMTPException:
 
 ## Python 并发编程
 
-### 线程
+## 枚举(enum)
+
+枚举类型一旦定义，就不能修改。
+
+Python3 提供了enum模块，定义类时继承enum.Enum，可以创建一个枚举类型数据，除此之外还可以继承enum.IntEnum，枚举值只能是int。
 
 ```python
+import enum
 
+class Color(enum.Enum):
+    RED = 1
+    GREEN = 2
+    BLUE= 3
+```
+
+枚举值理论上是允许重复的，如果不希望重复，可以使用enum提供的unique装饰器
+
+```python
+import enum
+@enum.unique
+class Color(enum.Enum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+```
+
+## 字符串格式化
+
+### %操作符
+
+```python
+print("My name is %s and weight is %d kg!" % ('Zara', 21))
+```
+
+### format()方法
+
+与字典结合
+
+```python
+info = {
+    'name': 'Zara',
+    'age': 7,
+    'class': 'First'
+}
+log = "My name is {name}, I'm {age} years old, I'm a {class}".format(**info)
+print(log)
+
+log = "My name is {0[name]}, I'm {0[age]} years old, I'm a {0[class]}".format(info)
+print(log)
+
+log = "My name is {info[name]}, I'm {info[age]} years old, I'm a {info[class]}".format(info = info
+)
+```
+
+与tuple结合
+
+```python
+info = ('Zara', 7, 'First')
+log = "My name is {0[0]}, I'm {0[1]} years old, I'm a {0[2]}".format(info)
+print(log)
+
+log = "My name is {info[0]}, I'm {info[1]} years old, I'm a {info[2]}".format(info = info
+```
+
+与对象结合
+
+```python
+class Info:
+    def __init__(self, name, age, class_):
+        self.name = name
+        self.age = age
+        self.class_ = class_
+
+info = Info('Zara', 7, 'First')
+log = "My name is {0.name}, I'm {0.age} years old, I'm a {0.class_}".format(info)
+print(log)
+
+log = "My name is {info.name}, I'm {info.age} years old, I'm a {info.class_}".format(info = info)
+print(log)
+```
+
+不指定关键字参数
+
+```python
+log = "My name is {}, I'm {} years old, I'm a {}".format('Zara', 7, 'First')
+print(log)
+```
+
+不指定关键字参数
+
+```python
+log = "My name is {0}, I'm {1} years old, I'm a {2:10},ok".format('Zara', 7, 'First')
+print(log)
+```
+
+### f-string用法
+
+f-string 是3.6之后的版本添加的，称之为字面量格式化字符串。
+
+```python
+color = 'red'
+log = f"color is {color}, upper is {color.upper()}"
+print(log)
+```
+
+格式化日期
+
+```python
+from datetime import datetime
+now = datetime.now()
+log = f"now is {now:%Y-%m-%d %H:%M:%S}"
+print(log)
+```
+
+设置对齐方式
+
+```python
+word = "hello"
+
+print(f"{word:*^10}")   # 居中对齐
+print(f"{word:*>10}")   # 右对齐
+print(f"{word:*<10}")   # 左对齐
+```
+
+10 表示格式化以后的字符串的长度
+^ 表示居中, > 表示右对齐， <表示左对齐
+\* 表示填充字符，默认为空格
+
+格式化类的对象
+
+```python
+class User:
+  def __init__(self, first_name, last_name):
+    self.first_name = first_name
+    self.last_name = last_name
+
+  def __str__(self):
+    return f"{self.first_name} {self.last_name}"
+
+  def __repr__(self):
+    return f"User name is{self.first_name} {self.last_name}"
+
+user = User("zhang", "san")
+print(f"{user}")
+print(f"{user!r}")
+```
+
+对一个对象实例进行格式化，会自动调用其__str__()方法，想要调用__repr__()方法，可以在表达式里加`!r`。其实这种格式化方法在format中也可以。
+
+嵌套f-string
+
+```python
+number = 324.123435
+print(f'{f"{number:.2f}":>10}')
+```
+
+### 类型标注
+
+```python
+def add(a: int, b: int) -> int:
+  return a + b
+```
+
+变量可以有如下类型标注：
+
+- int
+- float
+- bool
+- str
+- list
+- tuple
+- dict
+- set
+- bytes
+
+类型标注的好处就是可以在编译时检查代码的正确性。
+类型标注的意义就是要求我们不能随意去更改它的类型。
+
+```python
+from typing import Optional, Union, Any
+
+a: Optional[Union[int, float]] = None
+b: bool = True
+c: str = 'ok'
+d: Optional[int] = None
+e: float = 9.8
+f: bytes = b'32'
+d = 5
 ```
