@@ -1796,4 +1796,5 @@ d: Optional[int] = None
 e: float = 9.8
 f: bytes = b'32'
 d = 5
+hello = 12
 ```
