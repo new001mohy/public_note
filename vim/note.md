@@ -221,7 +221,7 @@ a {background-image: url('/image/two.png')}
 a {background-image: url('/image/three.png')}
 ```
 
-> 使用<C-v>进入列选择模式，`j`选择所有的行，`e`选择image单词，`c`后替换。按esc后就可以全部替换了。
+> 使用\<C-v>进入列选择模式，`j`选择所有的行，`e`选择image单词，`c`后替换。按esc后就可以全部替换了。
 
 ## 技巧26 在长短不一的高亮块后添加文本
 
@@ -230,6 +230,7 @@ var a = 1231;
 var b = "hello world";
 var c = "ads";
 ```
+
 每一行的文本长度不一样，除了使用`A;`外，也可以使用列选择模式。`C-v2j$A;<ESC>`
 
 ## 技巧27 认识Vim的命令行模式
