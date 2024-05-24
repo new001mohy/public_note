@@ -276,6 +276,8 @@ LOOP: for a < 20 {
 
 #### strings 和 strconv 包
 
+##### 字符串操作
+
 `HasPrefix` 判断字符串是否包含该前缀
 
 ```golang
@@ -369,6 +371,16 @@ strings.Join(sl []string, seq string) string
 - `Read()` 从 []byte 中读取内容
 - `ReadByte()` 和 `ReadRune()` 从字符串中读取下一个 byte 或者 rune。
 
+##### 字符串类型转换
+
+与字符串相关的类型转换都是通过 `strconv` 包实现的。
+该包包含了一些变量用于获取程序运行的操作系统平台下 int 类型所占的位数，如: `strconv.IntSize`。
+
+- `strconv.Itoa(i int) string` 返回数字 i 所表示的字符串类型的十进制数。
+- `strconv.FormatFloat(f float64, fmt byte, prec int, bitSize int) string` 将64位浮点数的数字转换为字符串，其中 `fmt` 表示格式（其值可以是 `'b'`,`'e'`,`'f'`,`'g'`），`prec` 表示精度， `bitsize` 则使用32表示float32， 用64表示float64。
+- `strconv.Atoi(s string)(i int, err error)` 将字符串转换为int型。
+- `strconv.ParseFloat(s string, bitsize int)(f float64, err error)` 将字符串转为 float64类型
+
 ### 数组
 
 `var arrayName [size] dataType`
@@ -379,3 +391,7 @@ balance := [5]int{1,2,3,4,5}
 balance := [...]int{1,2,3,4,5}
 
 ```
+
+### 指针
+
+一个指针变量指向了一个值的内存地址。
