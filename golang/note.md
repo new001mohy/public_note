@@ -552,15 +552,74 @@ i.method_name2()
 指定了零个方法的接口被称为空接口
 
 ```golang
-interface{}
+type Any interface{}
 ```
 
 空接口可以保存任何类型的值。(因为每个类型都至少实现了零个方法)
 
 ### 错误处理
 
-当一次函数
+常见的有五种错误处理的方法
 
-#### 类型断言
+1. 传播错误。子程序错误直接导致整个函数的失败
 
-pass
+    ```golang
+    res, err := http.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    ```
+
+2. 错误的发生是偶然的，或者不可知的问题导致的，可以选择重试失败的操作。
+
+   ```golang
+   var success bool = false
+   for i := 0; i < 3; i++ {
+    res, err := http.Get(url)
+    if err == nil {
+        break
+    } 
+   }
+   ```
+
+3. 如果某些错误发生后，程序无法继续运行。可以输出错误信息并结束程序。
+4. 只输出错误信息，不需要终端程序的运行。
+5. 直接忽略这个错误。
+
+### 类型分支
+
+```golang
+switch x.(type) {
+    case nil: //...
+    case int, unit: //...
+    case bool: //...
+    default://...
+}
+```
+
+### 并发
+
+每一个并发的执行单元叫做一个 goroutine。
+
+```golang
+go func_name(参数列表)
+```
+
+### 通道
+
+通道(channels)是gorouting之间的通信机制。通道可用来两个 gorouting 之间通过传递一个指定类型的值来同步运行和通信。操作符 `<-` 用于指定通道的方向。如果未指定方向，则为双向通道。
+
+```golang
+ch <- v // 把v发送给通道ch
+v := <- ch // 从ch接受数据并赋值给v
+```
+
+#### 声明通道
+
+```golang
+// 声明无缓冲区的通道，发送端发送数据，同时必须有接收端接收数据。
+ch := make(chan int)
+
+// 给通道设置缓冲区，带缓冲区的通道允许数据的发送和接收处于异步的状态。但是还是必须设置接受者，否则缓冲区满了也就不能再向里面发送信息了
+ch := make(chan int, 10)
+```
