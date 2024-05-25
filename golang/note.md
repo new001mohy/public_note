@@ -394,4 +394,173 @@ balance := [...]int{1,2,3,4,5}
 
 ### 指针
 
-一个指针变量指向了一个值的内存地址。
+一个指针变量指向了一个值的内存地址。和 C++ 的指针用法基本相同。使用 `&` 进行取址， 使用 `*` 按地址取值。
+
+指针的定义
+
+`var point_name *var-type`
+
+当一个指针被定义后没有分配到任何的变量时，他的值为nil。nil 指针被称为空指针。一个指针变量通常缩写为 `ptr`。
+
+### 结构体
+
+```golang
+type struct_variable_type struct {
+    member definiton
+    member definiton
+    ...
+}
+```
+
+一旦定义了结构体，就可以用于变量的声明。
+
+```golang
+variable_name := structure_variable_type {value1, value2, ... ,valuen}
+// or
+variable_name := structure_variable_type {key1:value1, key2:value2, ... ,keyn:valuen}
+```
+
+### 切片
+
+Go 语言的切片是对数组的抽象。与数组不同的是，切片的长度不是固定的，可以追加元素，在追加时可能使切片的容量变大。
+
+数组和切片(Slice)之间有着紧密的联系。一个 Slice 是一个轻量级的数据结构。Slice 底层引用一个数组对象。一个 Slice 由3部分组成：指针、长度和容量。指针指向第一个 Slice 元素对应的底层数组元素的地址，要注意 Slice 的第一个元素不一定就是引用数组的第一个元素。
+长度对应的是 Slice 元素的个数;长度不能超过容量，容量一般是从 Slice 的开始位置到底层数组结尾的位置。
+
+多个 Slice 之间可以共享底层的数据，并且引用数组的部分区间可能重叠。
+
+```golang
+// 定义切片
+var identifier []type
+// 可以使用 make 函数来创建切片,容量 capacity 为可选参数。
+make([]T, length [,capacity])
+```
+
+#### 切片初始化
+
+```golang
+// 直接初始化切片， 其中 capacity 和 length 都是3
+s := [] int {1, 2, 3}
+
+// 初始化切片s，指向数组arr,底层就是arr数组
+s := arr[:]
+
+// 将 arr 中从下标 startIndex 到 endIndex - 1 下的元素创建一个新的切片。
+s := arr[startIndex:endIndex]
+
+// 将 arr 中从下标 startIndex 到 数组结尾下的元素创建一个新的切片
+s := arr[startIndex:]
+
+// 将 arr 中从数组开头到 endIndex - 1 下的元素创建一个新的切片
+s := arr[:endIndex]
+```
+
+#### len() 和 cap() 函数
+
+使用 `len()` 可以获取切片的长度。
+使用 `cap()` 可以获取切片的容量。
+
+#### 空(nil)切片
+
+一个切片在未初始化之前默认是nil，长度为0。
+
+#### append() 和 copy() 函数
+
+如果想增加切片的容量，必须创建一个新的更大的切片并把原分片的内容都拷贝过来。
+
+### range
+
+range 关键字用于 for 循环中迭代数组、切片、通道和集合中的元素。
+
+### map
+
+在获取 map 的值的时候，如果间不存在，返回该类型的零值。
+
+```golang
+// 使用make
+map_variable = make(map[keyType]valueType, initialCapacity)
+// 使用map字面量
+m := map[keyType]valueType {
+    key1:value1,
+    key2:value2
+    ...
+}
+```
+
+获取元素
+
+```golang
+// 如果不存在该值，则ok为false
+v, ok := m["key"]
+```
+
+删除键值对
+
+```golang
+delete(m, "key")
+```
+
+### 接口
+
+接口把具有共性的方法定义在一起，任何其他类型只要实现了这些方法就是实现了这个接口。
+Go 语言中的接口是隐式实现的，也就是说，如果一个类型实现了一个接口定义的所有方法，那么它就自动地实现了该接口。因此可以通过接口作为参数来实现对不同类型的调用，从而实现多态。
+
+```golang
+type interface_name interface {
+    method_name1 [return_type]
+    method_name2 [return_type]
+    method_name3 [return_type]
+    ...
+}
+
+// 定义一个结构体
+type struct_name struct {
+
+}
+
+// 实现接口方法
+func (s *struct_name) method_name1() [return_type]{
+
+}
+
+func (s *struct_name) method_name2() [return_type]{
+
+}
+
+func (s *struct_name) method_name3() [return_type]{
+
+}
+
+//使用
+
+// 定义方法1
+var i interface_name
+
+i = struct_name {
+
+}
+i.method_name1()
+
+// 方法2
+var i interface_name
+i = new(struct_name)
+i.method_name2()
+```
+
+#### 空接口
+
+指定了零个方法的接口被称为空接口
+
+```golang
+interface{}
+```
+
+空接口可以保存任何类型的值。(因为每个类型都至少实现了零个方法)
+
+### 错误处理
+
+当一次函数
+
+#### 类型断言
+
+pass
