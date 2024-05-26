@@ -623,3 +623,28 @@ ch := make(chan int)
 // 给通道设置缓冲区，带缓冲区的通道允许数据的发送和接收处于异步的状态。但是还是必须设置接受者，否则缓冲区满了也就不能再向里面发送信息了
 ch := make(chan int, 10)
 ```
+
+### defer
+
+golang 延迟调用
+
+```golang
+1. 关键字 defer 用于注册延迟调用。
+2. 这些调用直到 return 前才被执行。因此可以用来做资源清理。
+3. 多个 defer 语句，按先进后出（defer 栈）方式执行。
+4. defer 语句中的变量，在 defer 声明时就决定了。
+```
+
+defer 在执行闭包代码时，可以理解为闭包内的函数在第一次调用时参数就确定了，后面也都是使用第一个参数。
+
+使用 defer 捕获异常
+
+```golang
+func F() {
+  defer func(){
+    if err := recover(); err != nil {
+      fmt.Println("捕获异常", err)
+    }
+  }()
+}
+```
