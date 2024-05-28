@@ -308,7 +308,8 @@ strings.Index(s, substr string) int
 strings.LastIndex(s, substr string) int
 ```
 
-`Replace` 用于将字符串 str 中的前 n 个字符串 old 替换为字符串 new，并返回一个新的字符串，如果 n = -1 则替换所有的字符串 old 替换为 new
+`Replace` 用于将字符串 str 中的前 n 个字符串 old 替换为字符串 new，
+并返回一个新的字符串，如果 n = -1 则替换所有的字符串 old 替换为 new
 
 ```golang
 strings.Replace(str, old, new string, n int) string
@@ -377,7 +378,9 @@ strings.Join(sl []string, seq string) string
 该包包含了一些变量用于获取程序运行的操作系统平台下 int 类型所占的位数，如: `strconv.IntSize`。
 
 - `strconv.Itoa(i int) string` 返回数字 i 所表示的字符串类型的十进制数。
-- `strconv.FormatFloat(f float64, fmt byte, prec int, bitSize int) string` 将64位浮点数的数字转换为字符串，其中 `fmt` 表示格式（其值可以是 `'b'`,`'e'`,`'f'`,`'g'`），`prec` 表示精度， `bitsize` 则使用32表示float32， 用64表示float64。
+- `strconv.FormatFloat(f float64, fmt byte, prec int, bitSize int) string` 将64位浮点数的数字转换为字符串，
+其中 `fmt` 表示格式（其值可以是 `'b'`,`'e'`,`'f'`,`'g'`），`prec` 表示精度，
+`bitsize` 则使用32表示float32， 用64表示float64。
 - `strconv.Atoi(s string)(i int, err error)` 将字符串转换为int型。
 - `strconv.ParseFloat(s string, bitsize int)(f float64, err error)` 将字符串转为 float64类型
 
@@ -424,7 +427,8 @@ variable_name := structure_variable_type {key1:value1, key2:value2, ... ,keyn:va
 
 Go 语言的切片是对数组的抽象。与数组不同的是，切片的长度不是固定的，可以追加元素，在追加时可能使切片的容量变大。
 
-数组和切片(Slice)之间有着紧密的联系。一个 Slice 是一个轻量级的数据结构。Slice 底层引用一个数组对象。一个 Slice 由3部分组成：指针、长度和容量。指针指向第一个 Slice 元素对应的底层数组元素的地址，要注意 Slice 的第一个元素不一定就是引用数组的第一个元素。
+数组和切片(Slice)之间有着紧密的联系。一个 Slice 是一个轻量级的数据结构。Slice 底层引用一个数组对象。
+一个 Slice 由3部分组成：指针、长度和容量。指针指向第一个 Slice 元素对应的底层数组元素的地址，要注意 Slice 的第一个元素不一定就是引用数组的第一个元素。
 长度对应的是 Slice 元素的个数;长度不能超过容量，容量一般是从 Slice 的开始位置到底层数组结尾的位置。
 
 多个 Slice 之间可以共享底层的数据，并且引用数组的部分区间可能重叠。
@@ -635,7 +639,34 @@ golang 延迟调用
 4. defer 语句中的变量，在 defer 声明时就决定了。
 ```
 
-defer 在执行闭包代码时，可以理解为闭包内的函数在第一次调用时参数就确定了，后面也都是使用第一个参数。
+```golang
+return 语句并不是一个原子操作。一般分为两步：将结果`x`赋值给返回值，然后执行 `RET`指令;
+而 `defer` 语句执行的时候，是在赋值变量之后，`RET` 指令之前。
+如果 `x` 是一个值类型，进行拷贝。
+
+```
+
+defer 下的函数参数包含子函数
+
+```golang
+package main
+
+import "fmt"
+
+func function(index, value int) {
+  fmt.Println(index)
+  return index
+}
+
+func main() {
+  defer function(1, function(3, 0))
+  defer function(2, function(4, 0))
+}
+```
+
+执行结果时 3, 4, 2, 1
+
+defer 入桟的时候，会将函数地址、函数参数一同入桟，所以当形参也是一个子函数的时候，会先将这个子函数运行得到子函数返回值。
 
 使用 defer 捕获异常
 
@@ -647,4 +678,41 @@ func F() {
     }
   }()
 }
+```
+
+### 测试
+
+所有以 `_test.go` 为文件扩展名的的源代码文件都是 `go test` 的一部分，不会被 `go build` 编译到最终的可执行文件中。
+
+在 `*_test.go` 文件中有三种类型的函数，**单元测试函数**、基准测试函数和实例函数。
+
+| 类型 | 格式 | 作用 |
+| --------------- | --------------- | --------------- |
+| 测试函数 | 函数名前缀为Test | 测试程序的一些逻辑是否正确 |
+| 基准函数 | 函数名前缀为Benchmark | 测试函数的性能 |
+| 示例函数 | 函数名前缀为Example | 为文档提供示例文档 |
+
+go test 参数解读:
+
+```txt
+-c  ：编译 go test 为可执行文件，但是不运行测试。
+-i  ：安装测试包依赖的package，但是不运行测试。
+-test.run pattern ：只跑哪些单元测试用例
+-test.bench pattern ：跑哪些基准测试用例
+-test.benchmem：是否在基准测试的时候输出内存情况
+-test.benchtime t ：性能测试运行的时间，默认是1s 
+-test.cpuprofile cpu.out：是否输出cpu性能分析文件
+-test.memprofile mem.out：是否输出内存性能分析文件
+-test.blockprofile block.out：是否输出内部goroutine阻塞的性能分析文件
+-test.memprofilerate n：内存性能分析的时候有一个分配了多少的时候才打点记录的问题。
+这个参数就是设置打点的内存分配间隔，也就是profile一个sample代表的内存大小。
+默认是 512*1024的。如果设置为1,那每分配一个内存块就会在profile中有个打点，
+那么生成的profile的sample就会非常的多。如果设置为0，那就是不做打点了。
+
+可以通过设置memprofilerate=1和GOGC=off来关闭内存回收，对每个内存块的分配进行观察。
+
+-test.blockprofilerate n：控制goroutine阻塞的时候打点的纳秒数，默认1纳秒。
+-test.parallel n ：性能测试的程序并行cpu数，默认等于 GOMAXPROCS
+-test.timeout t ：如果测试用例运行时间超过t，则panic。
+-test.short：将运行时间较长的测试用例运行时间缩短。
 ```
