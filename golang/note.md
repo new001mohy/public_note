@@ -763,6 +763,101 @@ ch := make(chan int, 10)
 - 对于缓冲通道，向通道发送数据 `happens-before` 从通道接收到数据, 写 > 读
 - 对于无缓冲通道，从通道接受到数据 `happens-before` 从通道发送数据，读 > 写
 
+### 上下文 context
+
+Context是由Golang官方开发的并发控制包，一方面可以用于当请求超时或取消时候，相关的gorouting马上退出释放资源，
+另一方面Context本身含义就是上下文，其可以在多个goroutine或者多个处理函数之间传递共享的信息。
+
+context 可以用来在 goroutine 之间传递上下文信息，相同的 context 可以传递给运行在不同 goroutine 中的函数，
+上下文对于多个goroutine同时使用是安全的，context 包定义了上下文类型，可以使用 `background`、`TODO` 创建一个上下文，
+在函数调用链之间传播 context，也可以使用 `WithDeadline`,`WithTimeout`,`WithCancel`或`WithValue`创建的修改副本替代他。
+
+创建一个新的context。必须基于一个父context，组成一颗context树。
+
+#### 创建Context
+
+context 包主要提供了两种方式创建 context:
+
+- context.Background()
+- context.TODO()
+
+这两个函数其实只是互为别名，没有差别，所以大多数情况下，我们都使用 `context.Background` 作为起始的上下文向下传递。
+
+上面的两种方式是创建根 context，不具备任何功能，具体实践还是要依靠 context 包提供的 With 系列函数来进行派生。
+
+```golang
+func WithCancel(parent Context) (ctx Context, cancel CancelFunc)
+func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
+func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
+func WithValue(parent Context, key, var interface{}) Context
+```
+
+#### WithValue 携带数据
+
+在日常开发中都希望有一个 trace_id 能串联所有日志，这就需要我们打印日志的时候能够获取到这个trace_id，
+在 python 中我们可以用 gevent.local 来传递，在 java 中我们可以用 ThreadLocal 来传递， 在 Go 语言中
+我们就可以使用 Context ，使用 WithValue 来创建一个携带 trace_id 的 context
+
+在使用 WithValue 时要注意四个事项：
+
+- 不建议使用 context 值传递关键参数，关键参数应该显示的声明出来，不应该隐式处理。
+- 因为携带的value也是key,value的形式，为了避免 context 因多个包同时使用context而带来冲突，key建议采用内置类型。
+- 可以获取当前ctx，也可以获取父 context 中的value，向上查找对应的value
+- context 传递的数据中 key，value 都是 interface 类型，这种类型编译器无法确定类型，所以不是很安全，注意类型校验。
+
+#### 超时控制
+
+通常健壮的程序都是要设置超时时间的，避免因为服务端长时间相应消耗资源，所以一些 web 框架或 rpc 框架都会采用
+`WithTimeout`或者`WithDeadline`来做超时控制，当一次请求到达我们设置的超时时间，就会及时取消当前任务。
+`WithTimeout` 和 `WithDeadline` 作用是一样的，就是传递的时间参数不一样。通过传入的时间来自动取消 Context。
+它们都会返回一个 `cancelFunc` 方法，通过调用这个方法可以提前进行取消，不过在使用的过程中建议在自动取消后也调用 `cancelFunc` 去
+停止定时减少不必要的资源浪费。
+
+```golang
+package main
+
+import (
+  "context"
+  "fmt"
+  "time"
+)
+
+func main() {
+  ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+  defer cancel()
+  deal(ctx, cancel)
+}
+
+func deal(ctx context.Context, cancel context.CancelFunc) {
+  for i := 0; i < 10; i++ {
+    time.Sleep(1 * time.Second)
+    select {
+      case <- ctx.Done():
+        fmt.Println(ctx.Err())
+        return
+      default:
+        fmt.Println("deal time is %d\n", i)
+        cancel()
+    }
+  }
+}
+```
+
+如果我们想在一个goroutine中再单独地开一个goroutine去处理其他的时期，那么传递的context要基于context.Background或者context.TODO重新
+衍生出一个context。
+
+#### WithCancel 取消控制
+
+业务开发时，我们往往为了完成一个复杂的需求会开多个 goroutine 去做一些事情，这就导致我们会在一次请求中开多个 goroutine 却无法控制，
+我们就可以使用 WithCancel 来衍生一个 Context 传递到不同的goroutine 中，当我想让这些 goroutine 停止运行，就可以使用 cancel 来进行取消。
+
+#### 实现Context接口的类型
+
+emptyCtx：emptyCtx 是 int 类型能够， emptyCtx 实现了 Context 接口，是一个空context，只能作为根context。
+cancelCtx：支持取消操作
+WithCancel/WithDeadline：创建一个ctx,以及它关联的取消函数
+timeCtx：支持过期取消
+
 ### defer
 
 golang 延迟调用
