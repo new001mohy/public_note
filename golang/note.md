@@ -169,6 +169,39 @@ func(c Circle) getArea() float64 {
 
 ```
 
+#### nil 接收者
+
+值为 nil 的变量可以作为方法的接受者。
+
+```golang
+package main
+
+import "fmt"
+
+const defaultPath = "hello"
+
+type Config struct {
+  path string
+}
+
+func (c *Config) Path() string {
+ if c == nil {
+    return defaultPath
+  }
+  return c.path
+}
+
+
+func main() {
+  var v1 *Config
+  var v2 = &{
+    path: "world"
+  }
+  fmt.Println(v1.Path(), v2.Path())
+}
+
+```
+
 ### 条件语句
 
 #### if
@@ -405,6 +438,49 @@ balance := [...]int{1,2,3,4,5}
 
 当一个指针被定义后没有分配到任何的变量时，他的值为nil。nil 指针被称为空指针。一个指针变量通常缩写为 `ptr`。
 
+#### 转换和可比较性
+
+对于指针类型变量能不能够比较和显示转换需要满足以下规则：
+
+指针类型 *T1,*T2 对应的基类型 T1和T2的底层类型必须一致。
+
+#### uintptr
+
+uintptr 是一个足够大的整数类型，能够存放任何指针。不同于C语言，Go中普通类型的指针不能进行算术运算，我们可以将普通类型指针转为uintptr然后进行运算，
+但普通类型指针不能直接转为uintptr，必须先转换为 unsafe.Pointer 类型之后，再转换成uintptr
+
+#### unsafe.Pointer
+
+`unsafe` 标准库包提供了 `unsafe.Pointer` 类型，`unsafe.Pointer` 类型称为非安全指针类型。
+
+任何**指针类型都可以转为 unsafe.Pointer 类型， unsafe.Pointer 也可以转为任何指针类型**
+
+```golang
+func Alignof(variable ArbitaryType) uintptr // 用来获取变量variable的对齐保证
+func Offsetof(variable ArbitaryType) uintptr // 用来获取结构体值的某个字段的地址相对于此结构体值地址的偏移
+func Sizeof(variable ArbitaryType) uintptr  // 用来获取变量variable变量的大小尺寸
+```
+
+#### 正确使用 unsafe.Pointer
+
+##### 通过非安全类型指针，将 T1 转换成 T2
+
+```golang
+func Float64bits(f float64) uint64 {
+  // 此时 unsafe.Pointer 充当桥梁，T2 类型的尺寸不应该大于T1，否则会出现溢出异常。
+  return *(*uint64)(unsafe.Pointer(&f))
+}
+```
+
+##### 将非安全类型指针转为 `uintptr` 类型
+
+```golang
+a := 100
+uintptr(unsafe.Pointer(&a))
+```
+
+##### 将非安全类型指针转为 `uintptr` 类型，并进行算术运算
+
 ### 结构体
 
 ```golang
@@ -422,6 +498,25 @@ variable_name := structure_variable_type {value1, value2, ... ,valuen}
 // or
 variable_name := structure_variable_type {key1:value1, key2:value2, ... ,keyn:valuen}
 ```
+
+#### 空结构体
+
+空结构体占用的内存空间大小为零字节，并且他们的地址可能相等也可能不想等。
+
+> [!IMPORTANT]
+> 无论逃逸还是未逃逸，我们都不应该对空结构体类型变量指向的内存地址是否一样，做任何预期。
+
+#### 当一个结构体嵌入空结构体时，占用空间计算
+
+空结构体本身不占用空间，但是作为某结构体内嵌字段时候，有可能是占用空间的。具体的计算规则如下：
+
+- 当空结构体是该结构体唯一的字段时，该结构体是不占用空间的，空结构体自然也不占用空间。
+- 当空结构体作为第一个字段或者中间字段的时候，是不占用空间的。
+- 当空结构体作为最后一个字段的时候，是占用空间的，大小跟前一个字段保持一致。
+
+#### 可以使用空结构体占用的空间大小为零的特性，完成一些特性而不占用额外的空间
+
+可以使用 map 搭配空结构体实现 集合的数据结构。
 
 ### 切片
 
@@ -472,13 +567,37 @@ s := arr[:endIndex]
 
 如果想增加切片的容量，必须创建一个新的更大的切片并把原分片的内容都拷贝过来。
 
+#### nil 切片
+
+对于 nil 切片进行读写操作的时候会panic，但是对 nil 切片进行 `append` 操作是可以的。
+
 ### range
 
 range 关键字用于 for 循环中迭代数组、切片、通道和集合中的元素。
 
 ### map
 
-在获取 map 的值的时候，如果间不存在，返回该类型的零值。
+映射底层一般都是由数组组成，该数组每个元素被成为桶，它使用hash函数将key分配到不同的桶中，
+如果出现hash碰撞冲突的时候，采用链地址法解决。
+
+#### map的创建
+
+当使用make函数创建map的时候，如果不指定map元素的数量，底层将使用`make_small`函数创建hmap结构，此时只产生哈希种子，不初始化桶。
+
+在获取 map 的值的时候，如果不存在，返回该类型的零值。
+
+#### 加载因子
+
+加载因子，也称为扩容因子，或者负载因子，用来描述哈希表中的填满程度。加载因子越大，表明哈希表中的元素越多，空间利用率高，但是这也意味着
+hash冲突的机会加大。**加载因子是通过写入元素个数除以桶的个数得到，当哈希表中所有桶都写满的情况下，此时的加载因子是1**，此时写入新的key
+一定会产生hash碰撞，为了提高哈希表写入效率就必须在加载因子超过一定值时（这个值称为**加载因子阈值**），进行rehash操作，将桶容量进行扩容，来尽量避免冲突
+
+Go 语言中映射的加载因子阈值是6.5，Go map中每个桶（每个桶有8个坑位）可以存放8个key-value,满载因子是8。
+
+#### 扩容方式
+
+1. 等容量扩容，未达到加载因子阈值情况下，如果B小于15时，溢出桶的数量大于2^B, 进行等容量扩容。
+2. 双倍容量扩容
 
 ```golang
 // 使用make
@@ -503,6 +622,10 @@ v, ok := m["key"]
 ```golang
 delete(m, "key")
 ```
+
+#### nil map
+
+对 nil map 进行读取操作时，会返回map valueType 的零值。当进行写操作的时候会发生 panic
 
 ### 接口
 
@@ -560,6 +683,9 @@ type Any interface{}
 ```
 
 空接口可以保存任何类型的值。(因为每个类型都至少实现了零个方法)
+
+接口类型变量包含两个基本的属性：`Type` 和 `Value`，`Type` 指的是接口变量的底层类型，`Value` 指的是接口类型变量的底层值。
+**接口类型是可以比较的。当拥有相同的底层类型，且相等的底层值的时候，或者两者都是nil的时候（type 和 value 都是nil），这两个值相等**
 
 ### 错误处理
 
@@ -627,6 +753,15 @@ ch := make(chan int)
 // 给通道设置缓冲区，带缓冲区的通道允许数据的发送和接收处于异步的状态。但是还是必须设置接受者，否则缓冲区满了也就不能再向里面发送信息了
 ch := make(chan int, 10)
 ```
+
+#### nil 通道
+
+从 nil 通道接收数据会永远阻塞。可以将通道设置为nil可以停止使用这个通道。
+
+#### 通道通信
+
+- 对于缓冲通道，向通道发送数据 `happens-before` 从通道接收到数据, 写 > 读
+- 对于无缓冲通道，从通道接受到数据 `happens-before` 从通道发送数据，读 > 写
 
 ### defer
 
