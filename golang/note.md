@@ -412,8 +412,8 @@ strings.Join(sl []string, seq string) string
 
 - `strconv.Itoa(i int) string` 返回数字 i 所表示的字符串类型的十进制数。
 - `strconv.FormatFloat(f float64, fmt byte, prec int, bitSize int) string` 将64位浮点数的数字转换为字符串，
-其中 `fmt` 表示格式（其值可以是 `'b'`,`'e'`,`'f'`,`'g'`），`prec` 表示精度，
-`bitsize` 则使用32表示float32， 用64表示float64。
+  其中 `fmt` 表示格式（其值可以是 `'b'`,`'e'`,`'f'`,`'g'`），`prec` 表示精度，
+  `bitsize` 则使用32表示float32， 用64表示float64。
 - `strconv.Atoi(s string)(i int, err error)` 将字符串转换为int型。
 - `strconv.ParseFloat(s string, bitsize int)(f float64, err error)` 将字符串转为 float64类型
 
@@ -693,12 +693,12 @@ type Any interface{}
 
 1. 传播错误。子程序错误直接导致整个函数的失败
 
-    ```golang
-    res, err := http.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    ```
+   ```golang
+   res, err := http.Get(url)
+   if err != nil {
+       return nil, err
+   }
+   ```
 
 2. 错误的发生是偶然的，或者不可知的问题导致的，可以选择重试失败的操作。
 
@@ -708,7 +708,7 @@ type Any interface{}
     res, err := http.Get(url)
     if err == nil {
         break
-    } 
+    }
    }
    ```
 
@@ -737,7 +737,8 @@ go func_name(参数列表)
 
 ### 通道
 
-通道(channels)是gorouting之间的通信机制。通道可用来两个 gorouting 之间通过传递一个指定类型的值来同步运行和通信。操作符 `<-` 用于指定通道的方向。如果未指定方向，则为双向通道。
+通道(channels)是gorouting之间的通信机制, 是并发安全的。通道可用来两个 gorouting 之间通过传递一个指定类型的值来同步运行和通信。
+操作符 `<-` 用于指定通道的方向。如果未指定方向，则为双向通道。
 
 ```golang
 ch <- v // 把v发送给通道ch
@@ -756,12 +757,20 @@ ch := make(chan int, 10)
 
 #### nil 通道
 
-从 nil 通道接收数据会永远阻塞。可以将通道设置为nil可以停止使用这个通道。
+从 nil 通道接收数据会永远阻塞，这会造成goroutine泄漏。可以将通道设置为nil可以停止使用这个通道。
 
 #### 通道通信
 
 - 对于缓冲通道，向通道发送数据 `happens-before` 从通道接收到数据, 写 > 读
 - 对于无缓冲通道，从通道接受到数据 `happens-before` 从通道发送数据，读 > 写
+
+#### channel 规则
+
+| 操作          | 空channel | 已关闭channel | 活跃的channel  |
+| ------------- | --------- | ------------- | -------------- |
+| close(ch)     | panic     | panic         | 成功关闭       |
+| ch <- v       | 永远阻塞  | panic         | 成功发送或阻塞 |
+| v,ok := <- ch | 永远阻塞  | 不阻塞        | 成功接收或阻塞 |
 
 ### 上下文 context
 
@@ -849,7 +858,8 @@ func deal(ctx context.Context, cancel context.CancelFunc) {
 #### WithCancel 取消控制
 
 业务开发时，我们往往为了完成一个复杂的需求会开多个 goroutine 去做一些事情，这就导致我们会在一次请求中开多个 goroutine 却无法控制，
-我们就可以使用 WithCancel 来衍生一个 Context 传递到不同的goroutine 中，当我想让这些 goroutine 停止运行，就可以使用 cancel 来进行取消。
+我们就可以使用 WithCancel 来衍生一个 Context 传递到不同的goroutine 中，
+当我想让这些 goroutine 停止运行，就可以使用 cancel 来进行取消。
 
 #### 实现Context接口的类型
 
@@ -916,11 +926,11 @@ func F() {
 
 在 `*_test.go` 文件中有三种类型的函数，**单元测试函数**、基准测试函数和实例函数。
 
-| 类型 | 格式 | 作用 |
-| --------------- | --------------- | --------------- |
-| 测试函数 | 函数名前缀为Test | 测试程序的一些逻辑是否正确 |
-| 基准函数 | 函数名前缀为Benchmark | 测试函数的性能 |
-| 示例函数 | 函数名前缀为Example | 为文档提供示例文档 |
+| 类型     | 格式                  | 作用                       |
+| -------- | --------------------- | -------------------------- |
+| 测试函数 | 函数名前缀为Test      | 测试程序的一些逻辑是否正确 |
+| 基准函数 | 函数名前缀为Benchmark | 测试函数的性能             |
+| 示例函数 | 函数名前缀为Example   | 为文档提供示例文档         |
 
 go test 参数解读:
 
@@ -930,7 +940,7 @@ go test 参数解读:
 -test.run pattern ：只跑哪些单元测试用例
 -test.bench pattern ：跑哪些基准测试用例
 -test.benchmem：是否在基准测试的时候输出内存情况
--test.benchtime t ：性能测试运行的时间，默认是1s 
+-test.benchtime t ：性能测试运行的时间，默认是1s
 -test.cpuprofile cpu.out：是否输出cpu性能分析文件
 -test.memprofile mem.out：是否输出内存性能分析文件
 -test.blockprofile block.out：是否输出内部goroutine阻塞的性能分析文件
@@ -946,3 +956,56 @@ go test 参数解读:
 -test.timeout t ：如果测试用例运行时间超过t，则panic。
 -test.short：将运行时间较长的测试用例运行时间缩短。
 ```
+
+### 原子操作 - atomic
+
+atomic 包提供的操作可分为3类：
+
+对整数类型T的操作，T 是 `int32`，`int64`，`uint32`,`uint64`,`uintptr` 其中的一种。
+
+```golang
+func AddT(addr *T, data T)(new T)
+func CompareAndSwapT(addr *T, old, new T)(swapped bool)
+func LoadT(addr *T)(var T)
+func StoreT(addr *T, var T)
+func SwapT(addr *T, new T)(old T)
+```
+
+### 并发map sync.Map
+
+```golang
+func (m *Map)Store(key, value interface{})bool //Store 新增和修改操作
+func (m *Map)Load(key interface{})(value interface{}, ok bool) // Load方法用来获取key对应的value值
+func (m *Map)Delete(key interface{})bool //Delete 删除key
+func (m *Map)Range(f func(key, value interface{}) bool) // 接收一个迭代回调函数，用来处理遍历的key和value
+```
+
+总结：
+
+- sync.Map 是不能值传递的
+- sync.Map 采用的是空间换时间的策略。其底层结构存在两个map，分别是 read map 和 dirty map。
+  当读取操作时候，优先从 read map 中读取，是不需要加锁的，
+  若key不存在 read map 中时候，再从 dirty map 中读取，这个过程中是加锁的。当新增key操作时候，只会将新增的key添加到dirty map中，此过程是加锁的，
+  但不会影响read map的读操作。当更新key操作的时候，如果key 已经存在于read map 中，无锁更新read map即可。
+  总之sync.Map 会优先从 read map 中增删改查，因为对 read map 的操作是不需要加锁的。
+- 当 sync.Map 读取key的时候，若从read map 中没有读到，但 dirty map 存在的key，则会把 dirty map 升级为readmap，这个过程是加锁的，下次读取的时候就依然从readmap中读取
+- 延迟删除机制，删除一个键值时只是打上删除标记，只有 dirty map 升级为 read map 的时候才清理删除的数据。
+- sync.Map 中 dirty map 要么是nil，要么包含 read map 中所有未删除的key-value
+- sync.Map 适用于读多写少的场景。
+
+### 等待组 sync.WaitGroup
+
+- WaitGroup 是不能值传递的
+- Add 方法的传值可以是负数，但加上该传值之后的WaitGroup计数器不能是负值
+- Done 方法实际上是调用的是Add(-1)
+- Add 方法和Wait方法不能并发调用
+- Wait 方法可以多次调用，调用此方法的goroutine会阻塞，一直阻塞到WaitGroup计数器值变为0
+
+### 一次性操作 sync.Once
+
+sync.Once 用来完成一次性操作，比如配置加载，单例对象初始化等。
+
+### 缓冲池 sync.Pool
+
+sync.Pool 提供了临时的对象缓冲池，存在池子的对象可能在任何时刻被移除。sync.Pool **可以并发使用**，它通过**复用对象来减少对象内存分配和GC的压力**。
+当负载大的时候，临时的对象缓冲池会扩大，缓存池中的对象会在每2个GC循环中清除。
