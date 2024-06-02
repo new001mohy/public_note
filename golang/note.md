@@ -1384,3 +1384,109 @@ func main() {
 }
 
 ```
+
+### 定义路由日志的格式
+
+如果想指定日志的格式，可以使用 `gin.DebugPrintRouteFunc` 指定格式。
+
+### 将 request body 绑定到不同的结构体中
+
+一般通过调用 `c.Request.Body` 方法绑定数据，但不能多次调用这个方法。
+
+在某些特殊格式，如 `JSON`， `XMl`， `MsgPack`，`ProtoBuf` 时，使用 `c.ShouldBind` 只能使用一次，
+要想多次进行绑定，应该使用 `c.ShouldBindBodyWith`, 这个方法是在调用了一次 `c.ShouldBind` 之后，
+将结果存入上下文中。重复进行绑定时使用的是上下文中的数据。这会对性能造成轻微地影响。
+如果调用一次就能完成绑定的话，就不要使用这个方法。
+
+同时对于其他格式，如 `Query`， `Form`，`FormPost`，`FormMultipart` 可以多次调用 `c.ShouldBind()` 而不会造成任何性能损失。
+
+### 静态文件服务
+
+```Golang
+func main() {
+ router := gin.Default()
+ router.Static("/assets", "./assets")
+ router.StaticFS("/more_static", http.Dir("my_file_system"))
+ router.StaticFile("/favicon.ico", "./resources/favicon.ico")
+
+ // 监听并在 0.0.0.0:8080 上启动服务
+ router.Run(":8080")
+}
+```
+
+### 静态文件嵌入
+
+可以使用 [go-assets](https://github.com/jessevdk/go-assets) 将静态资源打包到可执行文件中。
+
+### 控制日志输出颜色
+
+```Golang
+// 禁止日志的颜色
+gin.DisableConsoleColor()
+
+// 强制日志颜色化
+gin.ForceConsoleColor()
+```
+
+### 路由参数
+
+以 `:` 开头的是必须得有的，以 `*` 开头的则是有没有都可
+
+```golang
+ // 此 handler 将匹配 /user/john 但不会匹配 /user/ 或者 /user
+ router.GET("/user/:name", func(c *gin.Context) {
+  name := c.Param("name")
+  c.String(http.StatusOK, "Hello %s", name)
+ })
+
+ // 此 handler 将匹配 /user/john/ 和 /user/john/send
+ // 如果没有其他路由匹配 /user/john，它将重定向到 /user/john/
+ router.GET("/user/:name/*action", func(c *gin.Context) {
+  name := c.Param("name")
+  action := c.Param("action")
+  message := name + " is " + action
+  c.String(http.StatusOK, message)
+ })
+```
+
+### 路由组
+
+```golang
+v1 := router.Group("/v1")
+{
+  v1.GET("/login", loginEndpoint)
+}
+```
+
+| 标签                 | 作用                                                            | 示例                        |
+| -------------------- | --------------------------------------------------------------- | --------------------------- |
+| -                    | skip                                                            | Password string \`json:"-"` |
+| \|                   | or，允许使用多个验证器和接受                                    |                             |
+| structonly           | 验证嵌套结构体，但不验证内部的字段                              |                             |
+| nostructlevel        | 与structonly标签相同，只是不会运行任何结构体级别的验证          |                             |
+| omitempty            | 无值不验证，有值验证                                            |                             |
+| omitnil              | 允许在值为 nil 时跳过验证                                       |                             |
+| dive                 | 告诉验证器深入到切片，数组或map并验证                           |                             |
+| keys&endkeys         |                                                                 |                             |
+| required             | 验证值不是默认的零值                                            |                             |
+| required_if          | 字段必须存在，当仅当all时不为空，其他指定的字段等于字段后面的值 |                             |
+| required_unless      | 字段必须存在，除非参数等于给定的值                              |                             |
+| required_with        | 字段存在则请求该字段                                            |                             |
+| required_with_all    | 如果字段都存在则请求该字段                                      |                             |
+| required_without     | 如果字段不存在则请求该字段                                      |                             |
+| required_without_all | 如果字段都不存在，则请求该字段                                  |                             |
+| excluded_if          | 如果字段等于指定的值，则排除该字段                              |                             |
+| excluded_unless      | 排除该字段，除非值为给定的值                                    |                             |
+| isdefault            | 验证该值是默认的零值                                            |                             |
+| len                  | 验证给定参数为指定的长度或时间                                  |                             |
+| max                  | 验证给定参数小于等于长度或时间                                  |                             |
+| min                  | 验证给定参数大于等于长度或时间                                  |                             |
+| eq                   | 验证数量或时间相等                                              |                             |
+| ne                   | 验证数量或时间不相等                                            |                             |
+| oneof                | 验证参数为给定参数的一个                                        |                             |
+| gt                   | 验证参数大于指定参数                                            |                             |
+| gte                  | 验证参数大于等于指定参数                                        |                             |
+| lt                   | 验证参数小于指定参数                                            |                             |
+| lte                  | 验证参数小于等于指定参数                                        |                             |
+| eqfield              | 验证参数等于另一个字段                                          |                             |
+|                      |                                                                 |                             |
