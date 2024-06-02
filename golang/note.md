@@ -1037,3 +1037,350 @@ func add() {
 当一个goroutine获取写锁之后，其他的goroutine无论是获取读锁还是写锁都会等待。
 
 ### G-M-P 调度机制
+
+## gin
+
+### hello world
+
+```Golang
+package main
+
+import (
+ "net/http"
+
+ "github.com/gin-gonic/gin"
+)
+
+func main() {
+ r := gin.Default()
+ r.GET("/ping", func(c *gin.Context) {
+  c.String(http.StatusOK, "pong")
+ })
+ r.Run()
+}
+
+```
+
+### AsciiJSON
+
+使用 AsciiJSON 生成具有转义的非 Ascii 字符的ASCII-only JSON
+
+```golang
+func main() {
+ r := gin.Default()
+
+ r.GET("/someJSON", func(ctx *gin.Context) {
+  data := map[string]any{
+   "lang": "go 语言",
+   "tag":  "<br>",
+  }
+  ctx.AsciiJSON(http.StatusOK, data)
+ })
+
+ r.Run(":8080")
+}
+
+// {"lang":"go \u8bed\u8a00","tag":"\u003cbr\u003e"}
+```
+
+### HTML 渲染
+
+使用 LoadHTMLGlob() 或者 LoadHTMLFiles()
+glob 可以定义一批，Files需要指定具体的文件
+
+```golang
+func main() {
+ r := gin.Default()
+ // r.LoadHTMLGlob("templeates/*")
+ r.LoadHTMLFiles("templeates/index.tmpl")
+ r.GET("/index", func(ctx *gin.Context) {
+  ctx.HTML(http.StatusOK, "index.tmpl", gin.H{
+   "title": "Hello Mohy",
+  })
+ })
+
+ r.Run()
+}
+```
+
+```tmpl
+<html>
+  <h1>
+    {{ .title}}
+  </h1>
+</html>
+```
+
+#### 使用不同模块下名称相同的模板
+
+需要声明tmpl模板文件
+
+```golang
+func main() {
+ r := gin.Default()
+ r.LoadHTMLGlob("templeates/**/*")
+ // r.LoadHTMLFiles("templeates/index.tmpl")
+ r.GET("/posts/index", func(ctx *gin.Context) {
+  ctx.HTML(http.StatusOK, "posts/index.tmpl", gin.H{
+   "title": "Hello Posts",
+  })
+ })
+
+ r.GET("/user/index", func(ctx *gin.Context) {
+  ctx.HTML(http.StatusOK, "user/index.tmpl", gin.H{
+   "title": "hello User",
+  })
+ })
+ r.Run(":8080")
+}
+```
+
+`user/index.tmpl`，必须添加开头的 `define` 和后面的 `end`
+
+```golang
+{{ define "user/index.tmpl" }}
+<html>
+  <h1>
+    {{ .title}}
+  </h1>
+</html>
+{{ end }}
+```
+
+```golang
+{{ define "posts/index.tmpl" }}
+<html>
+  <h1>
+    {{ .title}}
+  </h1>
+</html>
+{{ end }}
+```
+
+### HTTP2 server 推送
+
+http.Pusher 仅支持 **go1.8+**
+
+后端主动向浏览器推送相关数据，可以在一定程度上加快速度，但提升不大？
+
+### JSONP
+
+使用 JSONP 向不同域的服务器发送数据。如果查询参数存在回掉，则将回掉添加到响应体中。
+
+虽然 Gin 对 JSONP 的支持很好，但是不推荐使用，因为 JSONP 劫持问题，如果跨域还是使用代理或 CORS 比较好。
+
+### Multipart/Urlencoded 绑定
+
+```golang
+type LoginForm struct {
+ User     string `form:"user" binding:"required"`
+ Password string `form:"password" binding:"required"`
+ Test     string `form:"test"`
+}
+
+func main() {
+ r := gin.Default()
+ r.POST("/login", func(ctx *gin.Context) {
+  var form LoginForm
+  // 显示地绑定声明
+  if ctx.ShouldBindWith(&form, binding.FormMultipart) == nil {
+   // 或者使用 ShouldBind 自动绑定
+   // if ctx.ShouldBind(&form) == nil {
+   if form.User == "user" && form.Password == "password" {
+    ctx.JSON(http.StatusOK, gin.H{
+     "status": "you are logged in",
+    })
+   } else {
+    ctx.JSON(http.StatusOK, gin.H{
+     "status": "unauthorized",
+    })
+   }
+  }
+ })
+ r.Run(":8080")
+}
+```
+
+### Multipart/Urlencoded 表单
+
+```golang
+func main() {
+ r := gin.Default()
+ r.POST("form_post", func(ctx *gin.Context) {
+  m := ctx.PostForm("message")
+  // 可以设置非必需参数
+  //
+  age := ctx.DefaultPostForm("age", "24")
+
+  ctx.JSON(200, gin.H{
+   "status":  1,
+   "message": m,
+   "age":     age,
+  })
+ })
+ r.Run(":8080")
+}
+```
+
+### PureJson
+
+通常，JSON 会使用 unicode 替换特殊的 HTML 字符，比如将 `<` 替换为 `\u003c`，想要原样输出可以使用 `PureJson`。
+
+```golang
+func main() {
+ r := gin.Default()
+ r.GET("/json", func(ctx *gin.Context) {
+  ctx.JSON(200, gin.H{
+   "html": "<b>hello,world</b>",
+  })
+ })
+ r.GET("/purejson", func(ctx *gin.Context) {
+  ctx.PureJSON(200, gin.H{
+   "html": "<b>hello,world</b>",
+  })
+ })
+ r.Run(":8080")
+}
+```
+
+### Queuy 和 post form
+
+`Context-type: application/x-www-form-urlencoded`
+
+```golang
+func main() {
+ router := gin.Default()
+
+ router.POST("/post", func(c *gin.Context) {
+
+  id := c.Query("id")
+  page := c.DefaultQuery("page", "0")
+  name := c.PostForm("name")
+  message := c.PostForm("message")
+
+  fmt.Printf("id: %s; page: %s; name: %s; message: %s", id, page, name, message)
+ })
+ router.Run(":8080")
+}
+```
+
+### SecureJSON
+
+使用 SecureJSON 防止 json 劫持。如果给定的结构是数组值，则默认预置 `while(1)` 到响应体。
+
+```golang
+func main() {
+ r := gin.Default()
+
+ r.GET("/secureJSON", func(ctx *gin.Context) {
+  names := []string{"lena", "alex", "foo"}
+  ctx.SecureJSON(200, names)
+ })
+ r.Run(":8080")
+}
+
+
+// 响应 while(1);["lena","alex","foo"]
+```
+
+### 绑定 Uri
+
+使用结构体标签uri,以及路由路径中添加`:tag`来进行 Uri 绑定
+
+```golang
+type Person struct {
+ ID   string `uri:"id" binding:"required,uuid"`
+ Name string `uri:"name" binding:"required"`
+}
+
+func main() {
+ r := gin.Default()
+ r.GET("/:name/:id", func(ctx *gin.Context) {
+  var person Person
+  if err := ctx.ShouldBindUri(&person); err != nil {
+   ctx.JSON(400, gin.H{"msg": err.Error()})
+  }
+  ctx.JSON(200, gin.H{"name": person.Name, "uuid": person.ID})
+ })
+
+ r.Run(":8080")
+}
+
+
+
+```
+
+### 绑定表单数据至自定义结构体
+
+使用 `c.Bind(&b)` 进行数据绑定
+
+### 绑定查询字符串或表单数据
+
+```golang
+type Person struct {
+  Name      string    `form:"name"`
+  Address   string    `form:"address"`
+  Birthday  time.Time `form:"birthday" time_format:"2006-01-02" time_utc:"1"`
+}
+
+func main(){
+  r := gin.Default()
+  r.GET("/testing", func (ctx *gin.Context){
+    var person Person
+    // 如果是 GET 请求，只使用 `Form` 绑定引擎
+    // 如果是 POST 请求，首先检查 Context-type 是否为 JSON 或 XML，然后使用 Form
+    if c.ShouldBind(&person) == nil {
+    log.Println(person.Name)
+  }
+  })
+  r.Run(":8080")
+}
+```
+
+### 不使用默认的中间件
+
+使用
+
+```golang
+r := gin.New()
+```
+
+代替
+
+```golang
+r := gin.Default()
+```
+
+### 查询字符串参数
+
+```golang
+name := ctx.DefaultQuery("name", "alex")
+age := ctx.Query("age")
+```
+
+### 从 reader 读取数据
+
+```golang
+func main() {
+ router := gin.Default()
+ router.GET("/someDataFromReader", func(c *gin.Context) {
+  response, err := http.Get("https://raw.githubusercontent.com/gin-gonic/logo/master/color.png")
+  if err != nil || response.StatusCode != http.StatusOK {
+   c.Status(http.StatusServiceUnavailable)
+   return
+  }
+
+  reader := response.Body
+  contentLength := response.ContentLength
+  contentType := response.Header.Get("Content-Type")
+
+  extraHeaders := map[string]string{
+   "Content-Disposition": `attachment; filename="gopher.png"`,
+  }
+
+  c.DataFromReader(http.StatusOK, contentLength, contentType, reader, extraHeaders)
+ })
+ router.Run(":8080")
+}
+
+```
