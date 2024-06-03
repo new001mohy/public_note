@@ -1489,4 +1489,317 @@ v1 := router.Group("/v1")
 | lt                   | 验证参数小于指定参数                                            |                             |
 | lte                  | 验证参数小于等于指定参数                                        |                             |
 | eqfield              | 验证参数等于另一个字段                                          |                             |
-|                      |                                                                 |                             |
+
+### 模型绑定和验证
+
+要将请求体绑定到结构体中，使用模型绑定。Gin 目前支持 `JSON`、`XML`、`YAML`和标准表单值的绑定(foo=bar&boo=baz)。
+使用时，需要在要绑定的所有字段上，设置响应的tag。例如使用JSON绑定时，设置字段标签为 `json:"fieldname"`。
+Gin提供了两类绑定方法：
+
+- Type-Must bind
+
+  - Methods -Bind,BindJSON,BindXML,BindQuery,BindYAML
+  - Behavior -这些方法属于 MustBindWith 的具体调用。如果发生绑定错误，则请求终止。
+
+- Type-Should bind
+  - Methods -ShouldBind,ShouldBindJSON,ShouldXML,ShouldBindQuery,ShouldBindYAML
+  - Behavior - 这些方法属于 `ShouldBindBodyWith` 的具体调用。如果发生绑定错误，Gin会返回错误并由开发者处理错误和请求。
+
+```golang
+type Person struct {
+ ID   string `json:"id" binding:"required"`
+ Name string `json:"name" binding:"required"`
+}
+
+func main() {
+ r := gin.Default()
+ r.POST("/login", func(ctx *gin.Context) {
+  var person Person
+
+  if err := ctx.ShouldBindJSON(&person); err != nil {
+   ctx.JSON(http.StatusBadRequest, gin.H{
+    "error": err.Error(),
+   })
+  }
+  if person.Name == "name" {
+   ctx.JSON(http.StatusOK, gin.H{
+    "status": "OK",
+   })
+  }
+ })
+ r.Run(":8080")
+}
+
+
+// 传参错误
+{
+    "error": "Key: Person.ID Err:Field validation 'ID' failed on the 'required' tag
+Key: 'Person.Name' Error:Field validation for 'Name' failed on the 'required' tag"
+}
+```
+
+### 如何记录日志
+
+```golang
+func main() {
+    // 禁用控制台颜色，将日志写入文件时不需要控制台颜色。
+    gin.DisableConsoleColor()
+
+    // 记录到文件。
+    f, _ := os.Create("gin.log")
+    gin.DefaultWriter = io.MultiWriter(f)
+
+    // 如果需要同时将日志写入文件和控制台，请使用以下代码。
+    // gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
+
+    router := gin.Default()
+    router.GET("/ping", func(c *gin.Context) {
+        c.String(200, "pong")
+    })
+
+    router.Run(":8080")
+}
+```
+
+### 上传文件
+
+#### 单文件
+
+```golang
+func main() {
+ r := gin.Default()
+ // 为 multipart forms 设置较低的内存限制（默认是 32 MIB）
+ r.MaxMultipartMemory = 8 << 20
+ r.POST("/upload", func(ctx *gin.Context) {
+  // 单文件
+  file, _ := ctx.FormFile("file")
+  log.Println(file.Filename)
+
+  dst := "./" + file.Filename
+
+  // 上传文件至指定的完整文件路径
+  ctx.SaveUploadedFile(file, dst)
+  ctx.String(http.StatusOK, fmt.Sprintf("'%s' upload", file.Filename))
+ })
+ r.Run(":8080")
+}
+```
+
+#### 多文件上传
+
+```golang
+func main() {
+ r := gin.Default()
+ // 为 multipart forms 设置较低的内存限制（默认是 32 MIB）
+ r.MaxMultipartMemory = 8 << 20
+ r.POST("/upload", func(ctx *gin.Context) {
+  //多文件
+  form, _ := ctx.MultipartForm()
+  files := form.File["files"]
+  for _, v := range files {
+   log.Println(v.Filename)
+   dst := "./" + v.Filename
+   ctx.SaveUploadedFile(v, dst)
+  }
+  ctx.String(http.StatusOK, fmt.Sprintf("%d files uploaded", len(files)))
+
+ })
+
+ r.Run(":8080")
+}
+```
+
+### 设置和获取 Cookie
+
+```golang
+func main() {
+  router := gin.Default()
+  router.GET("/cookie", func(c *gin.Context){
+    cookie,err := c.Cookie("gin_cookie")
+    if err != nil {
+      cookie = "NotSet"
+      c.SetCookie("gin_cookie", "test", 3600, "/", "localhost", false, true)
+
+    }
+  })
+  router.Run()
+}
+```
+
+### 使用 BasicAuth 中间件
+
+```golang
+// 私密数据
+var secrets = gin.H{
+ "admin": "adminPassword",
+}
+
+func main() {
+ r := gin.Default()
+ // 路由组使用 gin.BasicAuth() 中间件
+ // gin.Accounts 是 map[string]string 的一种快捷方式
+ authorized := r.Group("/admin", gin.BasicAuth(gin.Accounts{
+  "admin": "adminPassword",
+  "user":  "userPassword",
+ }))
+
+ {
+  authorized.GET("/secrets", func(ctx *gin.Context) {
+   // 获取用户，他是由 BasicAuth 中间件设置的
+   user := ctx.MustGet(gin.AuthUserKey).(string)
+   if secret, ok := secrets[user]; ok {
+    ctx.JSON(http.StatusOK, gin.H{"user": user, "secret": secret})
+   } else {
+    ctx.JSON(http.StatusOK, gin.H{"user": user, "secret": "NO SECRET :("})
+   }
+  })
+ }
+ r.Run(":8080")
+}
+```
+
+### 使用中间件
+
+```Golang
+func main() {
+ // 新建一个没有任何默认中间件的路由
+ r := gin.New()
+
+ // 全局中间件
+ // Logger 中间件将日志写入 gin.DefaultWriter，即使你将 GIN_MODE 设置为 release。
+ // By default gin.DefaultWriter = os.Stdout
+ r.Use(gin.Logger())
+
+ // Recovery 中间件会 recover 任何 panic。如果有 panic 的话，会写入 500。
+ r.Use(gin.Recovery())
+
+ // 你可以为每个路由添加任意数量的中间件。
+ r.GET("/benchmark", MyBenchLogger(), benchEndpoint)
+
+ // 认证路由组
+ // authorized := r.Group("/", AuthRequired())
+ // 和使用以下两行代码的效果完全一样:
+ authorized := r.Group("/")
+ // 路由组中间件! 在此例中，我们在 "authorized" 路由组中使用自定义创建的
+    // AuthRequired() 中间件
+ authorized.Use(AuthRequired())
+ {
+  authorized.POST("/login", loginEndpoint)
+  authorized.POST("/submit", submitEndpoint)
+  authorized.POST("/read", readEndpoint)
+
+  // 嵌套路由组
+  testing := authorized.Group("testing")
+  testing.GET("/analytics", analyticsEndpoint)
+ }
+
+ // 监听并在 0.0.0.0:8080 上启动服务
+ r.Run(":8080")
+}
+```
+
+### 优雅地重启或停止
+
+```golang
+func main() {
+ r := gin.Default()
+ r.GET("/", func(ctx *gin.Context) {
+  time.Sleep(5 * time.Second)
+  ctx.String(http.StatusOK, "Welcome Gin Server")
+ })
+
+ srv := &http.Server{
+  Addr:    ":8080",
+  Handler: r,
+ }
+
+ go func() {
+  // 服务连接
+  if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+   log.Fatalf("Listen: %s\n", err)
+  }
+ }()
+
+ // 等待中断信号以优雅地关闭服务器（设置 5 秒地超时时间）
+ quit := make(chan os.Signal, 1)
+ signal.Notify(quit, os.Interrupt)
+ <-quit
+ log.Println("Shutdown Server ...")
+
+ c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+ defer cancel()
+ if err := srv.Shutdown(c); err != nil {
+  log.Fatal("Server Shutdown:", err)
+ }
+ log.Println("Server exiting")
+}
+```
+
+### 在中间件中使用 goroutine
+
+当在中间件或handler中启动新的goroutine时，**不能**使用原始的上下文，必须使用只读副本。
+
+```Golang
+ r.GET("/long_async", func(c *gin.Context) {
+  // 创建在 goroutine 中使用的副本
+  cCp := c.Copy()
+  go func() {
+   // 用 time.Sleep() 模拟一个长任务。
+   time.Sleep(5 * time.Second)
+
+   // 请注意您使用的是复制的上下文 "cCp"，这一点很重要
+   log.Println("Done! in path " + cCp.Request.URL.Path)
+  }()
+ })
+```
+
+### 重定向
+
+#### HTTP 重定向。内部外部重定向均支持
+
+```golang
+r.GET("/test", func(c *gin.Context) {
+ c.Redirect(http.StatusMovedPermanently, "http://www.google.com/")
+})
+
+r.POST("/test", func(c *gin.Context) {
+ c.Redirect(http.StatusFound, "/foo")
+})
+```
+
+#### 路由重定向，使用 HandleContext
+
+```golang
+r.GET("/test", func(c *gin.Context) {
+    c.Request.URL.Path = "/test2"
+    r.HandleContext(c)
+})
+r.GET("/test2", func(c *gin.Context) {
+    c.JSON(200, gin.H{"hello": "world"})
+})
+```
+
+### 自定义中间件
+
+```golang
+func Logger() gin.HandlerFunc {
+ return func(c *gin.Context) {
+  t := time.Now()
+
+  // 设置 example 变量
+  c.Set("example", "12345")
+
+  // 请求前
+
+  c.Next()
+
+  // 请求后
+  latency := time.Since(t)
+  log.Print(latency)
+
+  // 获取发送的 status
+  status := c.Writer.Status()
+  log.Println(status)
+ }
+}
+```
