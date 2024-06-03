@@ -1493,7 +1493,7 @@ v1 := router.Group("/v1")
 ### 模型绑定和验证
 
 要将请求体绑定到结构体中，使用模型绑定。Gin 目前支持 `JSON`、`XML`、`YAML`和标准表单值的绑定(foo=bar&boo=baz)。
-使用时，需要在要绑定的所有字段上，设置响应的tag。例如使用JSON绑定时，设置字段标签为 `json:"fieldname"`。
+使用时，需要在要绑定的所有字段上，设置响应的tag。例如使用JSON绑定时，g置字段标签为 `json:"fieldname"`。
 Gin提供了两类绑定方法：
 
 - Type-Must bind
@@ -1803,3 +1803,5 @@ func Logger() gin.HandlerFunc {
  }
 }
 ```
+
+## GORM
