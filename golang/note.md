@@ -1805,3 +1805,234 @@ func Logger() gin.HandlerFunc {
 ```
 
 ## GORM
+
+### 模型定义
+
+GORM 通过将 Go 结构体（Go Struct）映射到数据库来简化数据库交互。了解如何在 GORM 中定义模型，
+是充分利用 GORM 全部功能的基础。
+
+模型是使用普通结构体定义的。这些结构体可以包含具有基本Go类型、指针或这些类型的别名，
+甚至是自定义类型（只需要实现`database/sql` 包中的 Scanner 和 Valuer 接口）。
+
+- 具体的数字类型如 `uint`、`string`和`uint8`直接使用。
+- 指向 `*string`的指针类型表示可空字段。
+- 使用 `database/sql` 包的 `sql.NullString` 用于具有更多控制的可空字段。
+- `CreateAt` 和 `UpdateAt` 是特殊字段，当记录创建或更新时，GORM 会自动向内填充时间。
+
+#### 约定
+
+1. 主键:GORM 使用一个名为`ID`的字段作为每个模型的默认主键。
+2. 表名：默认情况下，GORM 将结构体名称转为 `snake_case` 并为表名加上复数形式。
+   例如一个`User`结构体在数据库的表名变为 `users`。
+3. 列名：GORM 自动将结构体字段名称转化为 `snake_case` 来作为数据表中的列名。
+4. 时间戳字段 `CreateAt` 和 `UpdateAt`
+
+#### 字段权限控制
+
+```golang
+type User struct {
+ Name1 string `gorm:"<-:create"`          // 允许读和创建
+ Name2 string `gorm:"<-:update"`          // 允许读和更新
+ Name3 string `gorm:"<-"`                 // 允许读和写（创建和更新）
+ Name4 string `gorm:"<-:false"`           // 只读
+ Name5 string `gorm:"->"`                 // 只读
+ Name6 string `gorm:"->;<-:create"`       //允许读写
+ Name7 string `gorm:"->:false;<-:create"` //仅能创建，禁止从db读
+ Name8 string `gorm:"-"`                  // 通过 struct 读写会忽略该字段
+ Name9 string `gorm:"-:all"`              // 通过 struct 读写、迁移会忽略该字段
+ Name0 string `gorm:"-:migration"`        //通过 struct 迁移会忽略该字段
+}
+```
+
+#### 创建/更新时间追踪(纳秒，毫秒，秒，Time)
+
+GORM 约定使用 `CreateAt` 和 `UpdateAt` 追踪创建和更新时间。如果在模型中定义了这两个字段，
+GROM 会在创建和更新的时候自动填充当前字段。
+
+要使用**不同名称的字段**，可以配置 `autoCreateTime` 和 `autoUpdateTime` 标签。
+
+想要保存当前的时间戳，将 `time` 转为 `int` 类型即可。
+
+```golang
+type Modle struct {
+ CreateAt   time.Time // 在创建时，如果该字段为零值，则使用当花钱的时间进行填充
+ UpdateAt   int64     // 在创建时该字段为零值或更新的时候，使用当前时间戳秒数来填充
+ CreateTime int64     `gorm:"autoCreateTime:nano"`  // 使用时间戳纳秒数进行填充
+ UpdateTime int64     `gorm:"autoUpdateTime:milli"` // 使用时间戳毫秒数进行填充
+ Create     int64     `gorm:"autoCreateTime"`       // 使用时间戳秒数进行填充
+}
+```
+
+#### 嵌入结构体
+
+对于正常的结构体，可以通过标签 `embedded` 将其嵌入。可以使用标签 `embeddedPrefix` 来为 db 的字段名添加前缀。
+
+#### 字段标签
+
+声明 model 的时候， tag是可选的，GORM 支持以下tag：tag名大小写不敏感，但是建议使用`camelCase`
+
+| 标签名                | 说明                                                 |
+| --------------------- | ---------------------------------------------------- |
+| column                | 指定 db 列名                                         |
+| type                  | 列数据类型，推荐使用兼容好的通用类型                 |
+| serializer            | 指定将数据序列化或反序列化到数据库的序列化器         |
+| size                  | 定义列数据类型的长度                                 |
+| primaryKey            | 将列定义为主键                                       |
+| unique                | 将列定义为唯一                                       |
+| default               | 定义列的默认值                                       |
+| precssion             | 指定列的精度                                         |
+| scale                 | 指定列大小，比如DECIMAL(20,2)                        |
+| not null              | 指定列为not null                                     |
+| autoIncrement         | 指定列为自动增长                                     |
+| autoIncementIncrement | 自动步长，控制连续记录之间的间隔                     |
+| embedded              | 嵌套字段                                             |
+| embeddedPrefix        | 嵌入字段的列名前缀                                   |
+| autoCreateTime        | 创建时追踪当前时间                                   |
+| autoUpdateTime        | 创建/更新时追踪当前时间                              |
+| index                 | 根据参数创建索引多个字段使用相同的名称则创建复合索引 |
+| uniqueIndex           | 与 index 相同，但是你创建的是唯一索引                |
+| check                 | 创建检查约束                                         |
+| <-                    | 设置字段的写入权限                                   |
+| ->                    | 设置字段的读权限                                     |
+| -                     | 忽略该字段                                           |
+| comment               | 迁移时为字段添加注释                                 |
+
+### 连接数据库
+
+GORM 官方支持的数据库类型有：MySql,PostgresSql,Sqlite，SQL Server 和 TiDB
+
+这里使用PostgresSql 做演示。
+
+```golang
+func main() {
+ db, err := gorm.Open(
+  postgres.Open("host=host user=user password=pd dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Shanghai"),
+  &gorm.Config{
+   Logger:                 logger.Default.LogMode(logger.Info),
+   SkipDefaultTransaction: true,
+  },
+ )
+
+ if err != nil {
+  log.Fatalln("init gorm conn:", err)
+ }
+ // 连接池， GORM 使用`database/sql`来维护连接池
+ sqlDB, err := db.DB()
+ if err != nil {
+  log.Fatalln("init db conn:", err)
+ }
+ // 设置保持空闲连接的数量，如果<=0，则没有空闲连接，默认是2，就是说会有两个连接一直保持，等待使用
+ sqlDB.SetMaxIdleConns(3)
+ // 设置连接的最大空闲时间，过期的连接可能会在重用之前被延迟关闭，如果 <= 0连接不会关闭，单位是纳秒，可以使用time包中的Hour等
+ sqlDB.SetConnMaxLifetime(time.Hour)
+ // 设置最大的连接数，如果不设置（0）就是不限制。但是无限创建可能有性能瓶颈。所以需要根据数据库性能来进行配置。
+ // 当超出设定的数量，在等到超时之前，有连接释放就会获得操作的权限，如果没有则返回连接超时。
+ // 最大连接数 必须大于 最大空闲数
+ sqlDB.SetMaxOpenConns(100)
+ // 连接的空闲时间
+ sqlDB.SetConnMaxLifetime(time.Minute * 3)
+}
+```
+
+### CRUD
+
+#### 创建
+
+> [!IMPORTANT]
+> 必须向create传递指针，而不能是结构体
+
+单条记录
+
+```golang
+func main() {
+ db := GetDB()
+ // 自动迁移, 自动创建表
+ // db.AutoMigrate(&model.User{})
+ user := model.User{Name: "new001", Age: 24}
+ if err := db.Create(&user).Error; err != nil {
+  log.Fatalln("insert user err", err)
+ }
+}
+```
+
+也可以创建多条数据
+
+```Golang
+func main() {
+ db := GetDB()
+ user := []model.User{
+  {Name: "new001", Age: 24},
+  {Name: "xlex", Age: 32},
+ }
+ if err := db.Create(&user).Error; err != nil {
+  log.Fatalln("insert user err", err)
+ }
+}
+```
+
+用指定的字段创建记录，Select 是选定字段，Omit 是排除这些字段
+
+```golang
+db.Select("Name", "Age").Create(&user)
+
+db.Omit("CreateAt", "Age").Create(&user)
+```
+
+批量插入，要高效地插入大量记录，请将切片传递给`Create`方法。
+GORM 将生成一条SQL来插入所有数据，并返回所有的主键值，并触发`Hook`方法。
+当这些记录可以被分割成多个批次时，GORM 会开启一个事务来处理。
+
+```Golang
+var users = []User{{Name: "jinzhu1"}, {Name: "jinzhu2"}, {Name: "jinzhu3"}}
+db.Create(&users)
+
+for _, user := range users {
+  user.ID // 1,2,3
+}
+```
+
+可以通过 `db.CreateInBatches` 方法来指定批量插入的批次的大小。
+
+```golang
+db.CreateInBatches(users, 100)
+```
+
+可以在初始化gorm的时候使用`CreateInBatchSize`，之后所有的创建&关联行为都会遵循此配置。
+
+```golang
+db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{
+  CreateBatchSize: 1000,
+})
+
+db := db.Session(&gorm.Session{CreateBatchSize: 1000})
+
+users = [5000]User{{Name: "jinzhu", Pets: []Pet{pet1, pet2, pet3}}...}
+
+db.Create(&users)
+```
+
+创建钩子
+
+GORM 允许用户通过实现一个接口`BeforeSave`,`BeforeCreate`,`AfterSave`,`AfterCreate` 来自定义钩子。
+
+```golang
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+  u.UUID = uuid.New()
+
+    if u.Role == "admin" {
+        return errors.New("invalid role")
+    }
+    return
+}
+```
+
+如果想跳过Hooks方法，可以使用`SkipHooks`会话模式
+
+```golang
+DB.Session(&gorm.Session{SkipHooks:true}).Create(&user)
+```
+
+根据map创建，不会执行钩子方法，也不会回写主键。
+
+关联创建。在该模型中关联了另一个模型，那么这个关联也会被`upsert`， 并且它们的Hooks方法也会被调用。
+可以通过 Select 和 Omit 跳过关联。
