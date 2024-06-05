@@ -2363,6 +2363,28 @@ Belongs To 会与另一个模型建立了一对一关系。这种模型的每一
 
 `has many` 与另一个模型建立了一对多的连接、当前模型可以拥有零或多个关联的模型。
 
+```golang
+type User struct {
+ gorm.Model
+ Name        string
+ Age         int64
+ CreditCards []CreditCard
+}
+
+type CreditCard struct {
+ gorm.Model
+ Number string
+ UserID uint
+}
+
+func main() {
+ db := GetDB()
+ var users []model.User
+ db.Model(&model.User{}).Preload("CreditCards").Where("id = 1").Find(&users)
+ fmt.Printf("users: %v\n", users)
+}
+```
+
 #### Many To Many
 
 user 会多种 language, 多个 user 也可以说一种 language
@@ -2490,4 +2512,28 @@ tx.Create(&user2)
 tx.RollbackTo("sp1") // Rollback user2
 
 tx.Commit()
+```
+
+## 微服务 go-zero
+
+[go-zero](https://go-zero.dev/)
+
+### DSL 介绍
+
+#### api 语法
+
+api 是 go-zero 自研的领域特性语言（下文称为 api 语言 或 api 描述语言），旨在实现人性化的基础描述语言，
+作为生成 HTTP 服务最基本的描述语言。
+
+##### 快速入门
+
+1. 编写最简单的ping路由服务
+
+```golang
+syntax = "v1"
+
+// 定义 HTTP 服务
+service foo {
+    get /ping
+}
 ```
