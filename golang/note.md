@@ -1854,7 +1854,7 @@ GROM 会在创建和更新的时候自动填充当前字段。
 想要保存当前的时间戳，将 `time` 转为 `int` 类型即可。
 
 ```golang
-type Modle struct {
+type Model struct {
  CreateAt   time.Time // 在创建时，如果该字段为零值，则使用当花钱的时间进行填充
  UpdateAt   int64     // 在创建时该字段为零值或更新的时候，使用当前时间戳秒数来填充
  CreateTime int64     `gorm:"autoCreateTime:nano"`  // 使用时间戳纳秒数进行填充
@@ -1941,7 +1941,7 @@ func main() {
 > [!IMPORTANT]
 > 必须向create传递指针，而不能是结构体
 
-单条记录
+##### 单条记录
 
 ```golang
 func main() {
@@ -1955,7 +1955,7 @@ func main() {
 }
 ```
 
-也可以创建多条数据
+##### 也可以创建多条数据
 
 ```Golang
 func main() {
@@ -1970,13 +1970,15 @@ func main() {
 }
 ```
 
-用指定的字段创建记录，Select 是选定字段，Omit 是排除这些字段
+##### 用指定的字段创建记录，Select 是选定字段，Omit 是排除这些字段
 
 ```golang
 db.Select("Name", "Age").Create(&user)
 
 db.Omit("CreateAt", "Age").Create(&user)
 ```
+
+##### 批量插入
 
 批量插入，要高效地插入大量记录，请将切片传递给`Create`方法。
 GORM 将生成一条SQL来插入所有数据，并返回所有的主键值，并触发`Hook`方法。
@@ -2011,7 +2013,7 @@ users = [5000]User{{Name: "jinzhu", Pets: []Pet{pet1, pet2, pet3}}...}
 db.Create(&users)
 ```
 
-创建钩子
+##### 创建钩子
 
 GORM 允许用户通过实现一个接口`BeforeSave`,`BeforeCreate`,`AfterSave`,`AfterCreate` 来自定义钩子。
 
@@ -2034,5 +2036,458 @@ DB.Session(&gorm.Session{SkipHooks:true}).Create(&user)
 
 根据map创建，不会执行钩子方法，也不会回写主键。
 
+##### 关联创建
+
 关联创建。在该模型中关联了另一个模型，那么这个关联也会被`upsert`， 并且它们的Hooks方法也会被调用。
 可以通过 Select 和 Omit 跳过关联。
+
+#### 查询
+
+##### 检索单条数据
+
+GORM 提供了`First`,`Take`,`Last` 方法，以便从数据库中查询单个对象。
+添加了 `LIMIT 1`，没有找到时，返回 `ErrRecodeNotFound` 错误。
+
+```golang
+var user model.User
+// 获取第一条数据（主键升序）SELECT * FROM users ORDER BY id LIMIT 1;
+db.First(&user)
+
+// 获取第一条数据，不排序 SELECT * FROM users LIMIT 1;
+db.Take(&user)
+
+// 获取最后一条数据（主键降序） SELECT * FROM users ORDER BY id DESC LIMIT 1;
+db.Last(&user)
+
+// 检查是否是 ErrRecodeNotFound 错误
+errors.Is(result.Error, gorm.ErrRecodeNotFound)
+```
+
+`First` 和 `Last` 方法会按照主键排序找到第一条数据和最后一条数据。
+只有在目标 struct 是指针或者 `db.Model()` 指定model时，此方法才有效。
+此外，如果相关 model 没有定义主键，那么按 model 的第一个字段进行排序。
+
+```golang
+func main() {
+ db := GetDB()
+ var user model.User
+ // 可以工作，因为指定了结构体的指针
+ db.First(&user)
+
+ result := map[string]interface{}{}
+ // 可以工作，使用 db.Model 指定了具体模型的指针
+ db.Model(&model.User{}).First(&result)
+
+ // take
+ db.Table("users").Take(&result)
+ fmt.Printf("user: %v\n", user)
+}
+```
+
+##### 根据主键检索
+
+如果主键是数字类型，你可以使用内联变量来检索对象。当使用字符串时，需要额外注意来避免SQL注入。
+
+```golang
+// SELECT * FROM users WHERE id = 10;
+db.First(&user, 10)
+
+// SELECT * FROM users WHERE id = 10;
+db.First(&user, "10")
+// SELECT * FROM users where id in (1, 2, 3);
+db.Find(&users, []{1,2,3})
+```
+
+如果主键是字符串，可以这样写
+
+```golang
+db.First(&user, "id = ?", "123hjjhbgbhggggggggg")
+```
+
+当目标对象有一个主键值的时候，将使用主键构建查询条件：例如：
+
+```golang
+var user = User{ID: 10}
+
+// select * from users where id = 10;
+db.First(&user)
+
+var result User
+// select * from users where id = 10;
+db.Model(User{ID:10}).First(&user)
+```
+
+##### 检索全部对象
+
+```golang
+func main() {
+ db := GetDB()
+ var users []model.User
+ result := db.Find(&users)
+ fmt.Printf("result.RowsAffected: %v\n", result.RowsAffected)
+}
+```
+
+##### 条件
+
+###### String 条件
+
+```golang
+// 获取第一个匹配的记录 SELECT * FROM users where name = 'alex' order by id limit 1;
+db.Where("name = ?", "alex").First(&user)
+
+// 获取所有匹配的记录 select * from users where name != 'alex';
+db.Where("name != ?", "alex").Find(&users)
+
+// IN  select * from users where name in ('alex', 'mark');
+db.Where("name IN ?", []string{"alex", "mark"}).Find(&users)
+
+// like  select * from users where name like %le%;
+db.Where("name like ?", "%le%").Find(&users)
+
+// AND select * from users where name = 'alex' and age >= 22;
+db.Where("name = ? and age >= ?", "alex", "22").Find(&users)
+
+// Time  select * from users where update_at > '2024-05-09'
+db.Where("update_at > ?", lastWeek).Find(&users)
+```
+
+> [!IMPORTANT]
+> 如果对象设置了主键，条件查询将不会覆盖主键的值，而是用 And 连接条件。
+
+```golang
+var user = User{ID: 10}
+// select * from users where id = 10 and id = 20 order by id limit 1;
+db.Where("id = ?", 20).First(&user)
+```
+
+###### Struct & Map 条件
+
+```Golang
+// Struct  select * from users where name = 'alex' and age = 10 order by id limit 1;
+db.Where(&User{Name:"alex", Age: 10}).First(&user)
+
+// Map select * from users where name = 'alex' and age  =10;
+db.Where(map[string]interface{}{"name":"alex","age":10}).Find(&users)
+
+// 主键切片 select * from users where id in (10, 20, 21);
+db.Where([]int64{10,20,21}).Find(&users)
+```
+
+> [!IMPORTANT]
+> 当使用结构体构建查询条件时，零值不会用于构建查询条件，要想条件包含零值，可以使用 map。
+
+###### 选定特定的字段
+
+```golang
+db.Select("name","age").Find(&users)
+```
+
+###### 排序
+
+```golang
+// select * from users order by age desc, name
+db.Order("age desc, name").Find(&users)
+```
+
+###### Limit & Offset
+
+```golang
+db.Limit(1).Offset(10).Find(&users)
+```
+
+###### Group By & Having
+
+```golang
+// SELECT name, sum(age) as total FROM `users` GROUP BY `name` HAVING name = "group"
+db.Model(&User{}).Select("name, sum(age) as total").Group("name")
+.Having("name = ?", "group").Find(&result)
+```
+
+###### Distinct
+
+```golang
+db.Distinct("name", "age").Order("name, age desc").Find(&results)
+```
+
+###### Joins
+
+```golang
+db.Model(&User{}).Select("users.name, emails.email").
+Joins("left join emails on emails.user_id = users.id").Scan(&result{})
+```
+
+###### Scan
+
+Scan 和 find 的功能差不多，但是Scan使用的时候需要显式地指出数据库的表名。
+
+```golang
+type Result struct {
+  Name string
+  Age  int
+}
+
+var result Result
+db.Table("users").Select("name", "age").Where("name = ?", "Antonio").Scan(&result)
+
+// Raw SQL
+db.Raw("SELECT name, age FROM users WHERE name = ?", "Antonio").Scan(&result)
+```
+
+#### 高级查询
+
+##### 字段选择
+
+在查询的时候，字段较少的时候，可以使用 `Select` 指定，字段较多的时候，可以指定一个
+包含多个字段的模型（结构体）
+
+```Golang
+type User struct {
+  ID     uint
+  Name   string
+  Age    int
+  Gender string
+  // 很多很多字段
+}
+
+type APIUser struct {
+  ID   uint
+  Name string
+}
+
+// 在查询时，GORM 会自动选择 `id `, `name` 字段
+db.Model(&User{}).Limit(10).Find(&APIUser{})
+// SQL: SELECT `id`, `name` FROM `users` LIMIT 10
+
+```
+
+##### 锁(gorm)
+
+pass
+
+#### 更新
+
+##### 保存所有字段
+
+`Save` 会保存所有的字段，即使该字段是零值。
+`Save` 是一个组合函数，如果保存的值不包含主键，它将执行`Create`，否则它将执行`Update`， 包含所有的字段。
+
+##### 更新单个列
+
+当使用 `Update` 更新单列时，需要有一些条件（**阻止全局更新** ），当使用 `Model`，并且有主键的时候，
+主键将被用于构建条件。
+
+```golang
+// 根据条件更新
+db.Model(&User{}).Where("activate = ?", true).Update("name", "hello")
+```
+
+##### 更新多列
+
+`Updates` 方法支持 `Struct` 和 `map[string]interface{}` 参数。当使用 `struct` 更新时，默认情况下只会更新非零值的字段。
+
+```golang
+// 根据 `struct` 更新属性，只会更新非零值的字段
+db.Model(&user).Updates(User{Name: "hello", Age: 18, Active: false})
+
+// 根据 `map` 更新属性
+db.Model(&user).Updates(map[string]interface{}{"name": "hello", "age": 18})
+```
+
+#### 删除
+
+##### 删除一条记录
+
+当删除一条数据的时候，需要指定主键，否则会触发**批量删除**
+
+```Golang
+delete from users where id = 10;
+db.Delete(&User{}, 10)
+```
+
+##### 批量删除
+
+如果指定的值不包括主键，那么 GORM 会执行批量删除，它将删除所有匹配的数据。
+
+```golang
+db.Where("name like ?", "%al").Delete(&Email{})
+
+// 可以传递一个主键的切片，可以更高效的删除、
+```
+
+##### 软删除
+
+如果模型包含了 `gorm.DeletedAt` 字段，那么该模型的调用`Delete`的时候，是软删除。
+
+```golang
+UPDATE "users" SET "deleted_at"='2024-06-05 13:50:43.549'
+WHERE id = 1 AND "users"."deleted_at" IS NULL
+```
+
+###### 查找被软删除的记录
+
+可以使用`Unscoped` 来查询到被软删除的记录
+
+```golang
+db.Unscoped().Where("age = 20").Find(&users)
+```
+
+##### 永久删除
+
+可以使用`Unsoped` 来永久删除匹配的记录
+
+```golang
+db.Unsoped().Delete(&order)
+```
+
+#### SQL 构建器
+
+##### 原生sql
+
+```golang
+db.Raw("SELECT id, name, age from users where id = ?", 7).Scan(&result)
+```
+
+### 关联
+
+#### Belongs To
+
+Belongs To 会与另一个模型建立了一对一关系。这种模型的每一个实例都属于另一个模型的一个实例。
+比如，每个 user 能且只能被分配给一个 company.
+
+#### Has One
+
+`has one` 与另一个模型建立一对一的关系。和 Belongs To 关系相反。
+
+#### Has Many
+
+`has many` 与另一个模型建立了一对多的连接、当前模型可以拥有零或多个关联的模型。
+
+#### Many To Many
+
+user 会多种 language, 多个 user 也可以说一种 language
+
+### 会话
+
+为了避免共用DB导致的一些问题， gorm 提供了会话模式，通过新建 session 的形式，
+将 db 的操作分离，互不影响。
+
+```golang
+type Session struct {
+ DryRun                   bool   // 生成SQL但不执行
+ PrepareStmt              bool   // 预编译模式
+ NewDB                    bool   // 新的db, 不带之前的条件
+ Initialized              bool   // 初始化新的db
+ SkipHooks                bool   // 跳过执行钩子函数
+ SkipDefaultTransaction   bool   // 跳过默认的事物
+ DisableNestedTransaction bool   // 禁用嵌套事物
+ AllowGlobalUpdate        bool   // 允许全局更新
+ FullSaveAssociations     bool   // 允许更新关联字段
+ QueryFields              bool   // 查询的字段，开启后 * -> 具体的字段名
+ Context                  context.Context  // 上下文，可以传一个超时的上下文来控制执行的时间
+ Logger                   logger.Interface
+ NowFunc                  func() time.Time
+ CreateBatchSize          int    // 创建的批次大小
+}
+```
+
+### 事务
+
+#### 自动事务
+
+```golang
+db.Transaction(func(tx *gorm.DB) error {
+  // 在事物中执行一些 db 操作。从这里开始，数据库操作应该使用tx， 而不是db
+  if err := tx.Create(&Animal{Name: "cat"}).Error; err != nil {
+    // 返回任何的错误都会回滚事务
+    return err
+  }
+  // 返回nil提交事物
+})
+```
+
+#### 手动事物
+
+Gorm 支持直接调用事务控制方法
+
+```golang
+// 开始事务
+tx := db.Begin()
+
+// 在事务中执行一些db操作，从这里开始，应该使用 `tx` 而不是 `db`
+tx.Create(...)
+
+// 遇到错误的时候回滚事物
+tx.Rollback()
+
+// 否则，提交事务
+tx.Commit()
+```
+
+一个特殊的示例
+
+```golang
+func CreateAnimals(db *gorm.DB) error {
+  // 再唠叨一下，事务一旦开始，你就应该使用 tx 处理数据
+  tx := db.Begin()
+  // defer & recover
+  defer func() {
+    if r := recover(); r != nil {
+      tx.Rollback()
+    }
+  }()
+
+  if err := tx.Error; err != nil {
+    return err
+  }
+
+  if err := tx.Create(&Animal{Name: "Giraffe"}).Error; err != nil {
+     tx.Rollback()
+     return err
+  }
+
+  if err := tx.Create(&Animal{Name: "Lion"}).Error; err != nil {
+     tx.Rollback()
+     return err
+  }
+
+  return tx.Commit().Error
+}
+```
+
+#### 嵌套事务
+
+GORM 支持嵌套事务，可以回滚较大事务内执行的一部分操作
+
+```golang
+db.Transaction(func(tx *gorm.DB) error {
+  tx.Create(&user1)
+
+  tx.Transaction(func(tx2 *gorm.DB) error {
+    tx2.Create(&user2)
+    return errors.New("rollback user2") // Rollback user2
+  })
+
+  tx.Transaction(func(tx3 *gorm.DB) error {
+    tx3.Create(&user3)
+    return nil
+  })
+
+  return nil
+})
+```
+
+#### SavePoint, RollbackTo
+
+GORM 提供了 SavePoint， RollbackTo 方法，来提供保存点以及回滚至保存点的功能
+
+```golang
+tx := db.Begin()
+tx.Create(&user1)
+
+tx.SavePoint("sp1")
+tx.Create(&user2)
+tx.RollbackTo("sp1") // Rollback user2
+
+tx.Commit()
+```
