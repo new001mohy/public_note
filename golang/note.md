@@ -22,6 +22,39 @@ func main(){
 
 属于同一个包的源文件必须全部一起编译，一个包即是编译时的一个单元，因此根据惯例，每个目录下都只包含一个包。
 
+go.mod
+
+```txt
+// 模块名
+module gomod
+
+// go sdk
+go 1.22
+
+// 当前模块依赖的包
+require (
+  // dependency lastst
+)
+
+// 排除的第三方包
+excluded (
+  // dependency lastst
+)
+
+// 修改依赖包的路径或版本，依赖包发生迁移或原始包无法访问
+replace (
+  source latest => target latest
+)
+
+// 撤回
+// 当前项目作为其他项目的依赖，如果某个版本出现问题则撤回该版本
+retract (
+  v1.0.0
+)
+
+
+```
+
 ### 导入
 
 ```golang
@@ -920,6 +953,53 @@ func F() {
 }
 ```
 
+### 泛型
+
+泛型即开发过程中编写适用于所有类型的模板，只有在具体使用的时候才能确定其真正的类型。
+
+泛型方法
+
+```goalng
+func getMaxNum[T int64 | float64] (a, b T) T {
+
+}
+
+func getMinNum[T interface{int64 | float64}] (a,b T) T {
+
+}
+
+type CusNumT interface {
+  // ~ 表示支持类型的衍生类型
+  // | 表示取并集
+  // 多行之间取交集
+  uint16 | int32| float64 | ~int64
+  int32 | ~int64 | uint16
+}
+
+// MyInt64 为int64 的衍生类型，是具有基础类型的int64的新类型。和int64是不同的
+type MyInt64 int64
+
+// MyInt32 是 int32 的别名
+type MyInt32 = int32
+```
+
+泛型接口
+
+```golang
+type key[T comparable] interface {
+  any
+  Get() T
+}
+```
+
+泛型结构体
+
+```golang
+type MyStruct(T [interface{*int | *string}]) struct{
+
+}
+```
+
 ### 测试
 
 所有以 `_test.go` 为文件扩展名的的源代码文件都是 `go test` 的一部分，不会被 `go build` 编译到最终的可执行文件中。
@@ -931,6 +1011,21 @@ func F() {
 | 测试函数 | 函数名前缀为Test      | 测试程序的一些逻辑是否正确 |
 | 基准函数 | 函数名前缀为Benchmark | 测试函数的性能             |
 | 示例函数 | 函数名前缀为Example   | 为文档提供示例文档         |
+
+```txt
+go test 两种模式
+  1. 本地模式 当前的目录
+  2. 列表模式 指定要运行测试的目录
+
+-bench 基准测试
+-benchtime 测试的时间或次数，1s 1m 100x
+
+count 是要运行的次数
+
+conver 启用覆盖率分析
+
+CPU 1,2,4 go test 执行3次，其中 runtime.GOMAXPROCS分别是1,2,4
+```
 
 go test 参数解读:
 
