@@ -2609,7 +2609,9 @@ tx.RollbackTo("sp1") // Rollback user2
 tx.Commit()
 ```
 
-## 微服务 go-zero
+## 微服务
+
+微服务需要哪些基础的功能：鉴权，服务熔断，日志，服务指标、系统监控，服务限流，服务注册和发现，传输协议
 
 [go-zero](https://go-zero.dev/)
 
