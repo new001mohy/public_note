@@ -2608,29 +2608,3 @@ tx.RollbackTo("sp1") // Rollback user2
 
 tx.Commit()
 ```
-
-## 微服务
-
-微服务需要哪些基础的功能：鉴权，服务熔断，日志，服务指标、系统监控，服务限流，服务注册和发现，传输协议
-
-[go-zero](https://go-zero.dev/)
-
-### DSL 介绍
-
-#### api 语法
-
-api 是 go-zero 自研的领域特性语言（下文称为 api 语言 或 api 描述语言），旨在实现人性化的基础描述语言，
-作为生成 HTTP 服务最基本的描述语言。
-
-##### 快速入门
-
-1. 编写最简单的ping路由服务
-
-```golang
-syntax = "v1"
-
-// 定义 HTTP 服务
-service foo {
-    get /ping
-}
-```
