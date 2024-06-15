@@ -13,7 +13,7 @@
 
 ```bash
 # 根据api文件构建api服务
-goctl api go --api *api -dir ../
+goctl api go --api *api --dir ../
 ```
 
 ## api
@@ -235,6 +235,29 @@ Log:
   Encoding: json
 ```
 
-## 测试
+## model gen
 
-test
+goctl model 为 goctl 提供数据库模型代码生成指令，目前只支持 MYSQL, POSTGRESQL, MONGO 的代码生成，
+MYSQL 支持从 sql 文件和数据库连接两种方式生成。
+POSTGRESQL 仅支持从数据库连接生成。
+
+```shell
+#!/bin/bash
+
+user=root
+password=qwert12345
+host=127.0.0.1
+port=3306
+tables=("user" "company")
+style=goZero
+cache=true #是否生成带缓存的代码
+dbname=gozero_study
+modeldir=./genModel
+
+for((i=0;i<"${#tables[*]}";i++)); do
+    echo "开始生成 '${tables[i]}' 代码"
+    goctl model mysql datasource --url="${user}:${password}@tcp(${host}:${port})/${dbname}" --table="${tables[i]}" --style="${style}" --dir="${modeldir}" --cache="${cache}"
+done
+```
+
+## rpc
