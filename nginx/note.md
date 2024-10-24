@@ -151,4 +151,170 @@ http {
 
 ## 虚拟主机与域名解析
 
-域名、dns、ip地址的关系。nx
+虚拟主机指的是多个域名，或同一个域名的不同端口（域名+端口要有唯一性）同时映射到同一个 IP 地址上。
+
+### 域名解析
+
+这里的域名解析主管是指本地的`hosts`文件， windows 系统中在 `C:\windows\system32\drivers\etc\hosts`
+linux 系统在 '/etc/hosts'
+
+```shell
+ip在前 域名在后
+192.168.21.100 new001
+```
+
+## server_name 匹配规则
+
+server_name 按完整匹配、通配符匹配、后通配符、正则匹配，如果都不匹配，则找到 listen 中配置 default 的
+
+### 完整匹配
+
+```shell
+# 一个server_name后面可以配置多个主机域名
+server_name domain.com source.com;
+```
+
+### 通配符匹配
+
+```shell
+# 使用通配符，所有以 domain.com 结尾的都能匹配到
+server_name *.domain.com;
+```
+
+### 通配符结束匹配
+
+```shell
+# 以 domain 开始的都能匹配到
+server_name domain.*;
+```
+
+### 正则匹配
+
+```shell
+server_name ~^[0-9]+\.domain\.com$;
+```
+
+## 反向代理
+
+```shell
+server {
+  listen 80;
+  server_name localhost;
+  location / {
+    proxy_pass http://www.baidu.com;
+
+    # 一旦配置了proxy_pass就不会再去找 root 目录的静态文件了
+  }
+}
+```
+
+## 负载均衡配置
+
+```shell
+upstream loadbanance {
+  server 192.168.31.100:80;
+  server 192.168.31.101:80;
+}
+
+server {
+  listen 80;
+  server_name localhost;
+  location / {
+    proxy_pass http://loadbanance;
+  }
+}
+```
+
+### 权重
+
+```shell
+
+upstream loadbanance {
+  # 配置权重
+  server 192.168.31.100:80 weight=8;
+  server 192.168.31.101:80 weight=2;
+  # 不参与负载均衡  
+  server 192.168.31.102:80 weight=1 down;
+  # 当前面的机子都不能用的时候，使用 backup 服务器
+  server 192.168.31.103:80 weight=2 backup; 
+}
+
+server {
+  listen 80;
+  server_name localhost;
+  location / {
+    proxy_pass http://loadbanance;
+  }
+}
+```
+
+## 动静分离
+
+通过在location中使用 proxy_pass 来实现动态请求，在另一个location中配置root来实现静态资源的请求。
+
+## urlrewrite
+
+url rewrite 就是把请求重定向到其他 URL 的过程。
+rewrite 指令最后跟一个 flag 标记。
+
+| flag   | 解释    |
+|--------------- | --------------- |
+| last   | 表示完成 rewrite   |
+| break   | 本条规则匹配完成后，终止匹配，不再匹配后面的规则    |
+| redirect   | 返回 302 临时重定向，浏览器地址会显示跳转后的URL地址   |
+| permanent  | 返回 301 永久重定向，浏览器地址会显示跳转后的URL地址   |
+
+### rewrite 相关指令
+
+```shell
+if (condition) { ... }
+
+if 支持如下条件判断匹配符号
+~         正则匹配，区分大小写
+~*        正则匹配，不区分大小写
+!~        正则不匹配，区分大小写
+!~*       正则不匹配，不区分大小写
+-f & ! -f 用来判断是否存在文件
+-d & ! -d 用来判断是否存在目录
+-e & ! -e 用来判断是否存在目录或文件
+-x & ! -x 用来判断文件是否可以执行
+
+# 在匹配过程中可以使用一些 nginx 的全局变量
+$args               请求的参数
+$query_string       与 $args 相同
+$document_root      针对当前请求的根路径设置值
+$host               请求信息中的 host，如果请求中没有 host 行，则等于设置的服务器名
+$limit_rate         对连接速率的限制
+$request_method     请求的方法，如 GET 、 POST
+$remote_addr        客户端地址
+$http_x_forwarded_for 客户端地址
+$remote_port        客户端端口
+$remote_user        客户端用户名，认证用
+$request_filename   当前请求的文件路径名
+$request_uri        表示客户端请求的完整 URI
+$document_uri       和 $request_uri一样
+$scheme             表示当前请求用的协议，http or https
+$server_protocol    请求的协议版本 "HTTP/1.0" 或 "HTTP/1.1"
+$server_addr        服务器地址，如果没有使用 listen 指明服务器地址，使用这个变量将发起一次系统调用以取得地址
+$server_name        请求到达的服务器名
+$server_port        请求到达的服务器端口号
+
+```
+
+## 防盗链
+
+valid_refer：nginx 会匹配 referer 和 valid_refer 后面的内容，匹配成功就将变量 $invalid_referer 置为0，否则置为1,匹配过程中不区分大小写。
+
+`valid_refer none|blocked|server_names|string...`
+
+none: 如果 header 中的 referer 为空，允许访问
+blocked: 如果 header 中的 referer 不为空，但是被防火墙或代理服务器伪装过，这种情况该头域的值不以 "http" or "https" 开头。
+
+```shell
+localhost ～*(js|css|img) {
+  valid_refer.ers 192.168.31.100;
+  if($invalid_referer) {
+    return 403;
+  }
+}
+```
