@@ -95,13 +95,17 @@ nginx 是基于多进程工作的，主进程(master)负责读取和教研配置
 
 ## 配置
 
+### 配置结构
+
+![nginx 配置结构](../assets/nginx配置结构.jpg)
+
 ### 最小配置
 
 ```shell
 
 user  nginx;
 worker_processes  auto;
-
+# debug info notice warn error crit
 error_log  /var/log/nginx/error.log notice;
 pid        /var/run/nginx.pid;
 
@@ -109,6 +113,8 @@ pid        /var/run/nginx.pid;
 events {
     # 事件驱动模块
 
+    # 使用epoll来高效通信，默认是开启的
+    use epoll;
     # 指的是1个worker同时可以处理多少个连接
     worker_connections  1024;
 }
@@ -128,9 +134,15 @@ http {
 
     # 使用 linux 的 sendfile(socket, file, len) 来进行高效的网络传输，底层是零拷贝
     sendfile        on;
+    
+    # 当打开 tcp_nopush ，数据量达到一定量时进行批量传输
+    tcp_nopush      on;
 
     # 长连接时间
     keepalive_timeout  65;
+
+    # 打开 gzip 压缩来提高传输效率，但是需要消耗服务器 cpu 来进行压缩
+    gzip             on;
 
   # 虚拟主机 vhost
   server {
