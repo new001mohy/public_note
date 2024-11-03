@@ -72,3 +72,62 @@ Executors.newCachedThreadPool();
 - beforeExecute：线程池中某个线程开始执行任务之前调用
 - afterExecute：线程池中某个线程执行完任务之后调用
 - terminated：线程池关闭时调用
+
+### 线程池关闭
+
+- shutdownNow()：立即关闭线程池，不再接受新任务，将队列中的任务取消，返回未执行的任务列表，正在执行的任务继续执行，阻塞或等待的线程中断异常。
+- shutdown()：停止接受新任务，等待所有任务完成。
+
+## synchronized
+
+synchronized 关键字是 Java 中最基本的同步机制，它允许一个线程访问一个资源，其他线程必须等待，直到该线程释放资源。
+可以作用在方法上，也可以作用在代码块上。判断互斥的关键点在于：是否是同一个锁对象。
+
+### 对象锁
+
+```java
+// 作用在方法上 
+public synchronized void method() {
+    // do something
+}
+
+// 作用在代码块上
+public void method() {
+    synchronized(this) {
+        // do something
+    }
+}
+```
+
+### 类锁
+
+线程同时访问同一个类的静态同步方法会互斥。
+
+```java
+// 作用在方法上
+public synchronized static void method() {
+    // do something
+}
+
+// 作用在代码块上
+public static void method() {
+    synchronized(Class.class) {
+        // do something
+    }
+}
+```
+
+### synchronized 锁级别
+
+synchronized 的锁级别有三种：偏向锁，轻量级锁，重量级锁。
+
+在 HotSpot 中，一个对象的结构有三个部分：对象头，实例数据和内存对齐填充。
+
+![java 对象结构](../assets/java对象结构.jpg)
+
+#### 偏向锁
+
+在没有多线程竞争的情况下，访问 synchronized 修饰的同步代码，会先使用偏向锁。
+在项目启动的时候，可能会使用轻量级锁，`-XX:BiasedLockingStartupDelay=4` ，会有4 秒的偏向锁延迟。
+
+偏向锁是不会主动去释放锁的，当线程执行完同步代码块之后，不会主动释放锁，而是会一直保持偏向锁状态，直到出现锁竞争时，持有偏向锁的线程才会释放锁，然后发生锁升级。
