@@ -209,6 +209,14 @@ synchronized 的锁级别有三种：偏向锁，轻量级锁，重量级锁。
 
 如果一个线程修改了共享变量的值，其他线程也能读到最新写入的值，那就是内存可见的，否则就是内存不可见的;
 
+## 原子性
+
+一个指令或多个指令在执行的过程中不允许被中断，对应到代码中就是一段代码的执行不能被拆分。
+
+## 有序性
+
+程序的执行顺序按照代码的先后顺序执行
+
 ## volatile
 
 使用 `volatile` 关键字可以保证共享变量在多线程之间的内存可见性，以及可以防止指令重排序。
@@ -220,4 +228,195 @@ private volatile static int var = 10;
 private volatile int var = 10;
 ```
 
-`volatile` 不保证原子性，
+**volatile 具有可见性和有序性**， **synchronized 具有可见性、有序性和原子性**。
+
+volatile 和 synchronized 都是通过 **内存屏障**，来保证可见性和有序性。
+
+## 单例模式
+
+一个类只能够产生一个实例对象，保证了在多线程情况下的创建唯一的实例对象的解决方案。
+
+### 饿汉式
+
+在类加载的时候就初始化创建了对象。因为类只会被加载一次，所以天然保证了单例。
+
+```java
+// 直接初始化
+public final class Singleton {
+  private static final Singleton instance = new Singleton();
+
+  private Singleton(){}
+  public Singleton getInstance() {
+    return instance;
+  }
+}
+```
+
+```java
+// 静态代码块：在类第一次被加载进来的时候执行，仅执行一次，发生在任何对象创建之前，以及任何静态方法调用之前。
+// 实例代码块：实例代码块就是不被 static 修饰的代码块，在构造方法之前执行，即对每个对象都会执行。
+public final class Singleton {
+  private static Singleton instance = null;
+
+  static {
+    instance = new Singleton();
+  }
+
+  private Singleton(){}
+
+  public Singleton getInstance() {
+    return instance;
+  }
+}
+```
+
+```java
+public enum Singleton {
+  INSTANCE;
+
+  public String sayHello() {
+    return "hello";
+  }
+}
+```
+
+### 懒汉式
+
+懒加载，在需要的时候再创建对象，多线程条件下，编码不严谨可能会创建出多个对象出来。
+
+```java
+// synchronized 互斥写法, 保证了同一个时间只有一个线程可以执行代码，性能较差
+public final class Singleton {
+  private static Singleton instance = null;
+  
+  private Singleton(){
+
+  }
+
+  public static synchronized Singleton getInstance() {
+    if(null == instance) {
+      instance = new Singleton();
+    }
+    return instance;
+  }
+}
+```
+
+```java
+// Double-check 多线程首次获取对象需要互斥操作，之后获取对象都不需要加锁
+public final class Singleton {
+  private static Singleton instance = null;
+
+  private Singleton() {}
+
+  public static Singleton getInstance() {
+    if(null == instance) {
+      synchronized(Singleton.class) {
+        if(null == instance) {
+          instance = new Singleton();
+        }
+      }
+    }
+    return instance;
+  }
+}
+```
+
+Double-check 解决了多线程竞争时后续竞争锁的操作，但是在极端条件下会产生空指针的问题。
+instance = new Singleton(); 的这个过程有 3 个动作。
+
+1. 分配对象的内存空间
+2. 初始化对象
+3. 设置 instance 指向刚刚分配的内存地址
+
+操作 2 依赖 1, 但是操作 3 不依赖操作 2， 所以可能会发生指令重排出现 1,3,2 的顺序，这时候虽然 instance 不为空，
+但是对象有可能没有正确的初始化，然后调用这个未初始化完成的对象的方法就可能报错。
+
+```java
+// Double-check + volatile 禁止指令重排解决 DCL 的问题
+public final class Singleton {
+  private volatile static Singleton instance = null;
+
+  private Singleton(){}
+
+  public Singleton getInstance() {
+    if(null == instance) {
+      synchronized(Singleton.class) {
+        if(null == instance) {
+          instance = new Singleton();
+        }
+      }
+    }
+    return instance;
+  }
+}
+```
+
+```java
+// 采用静态内部类的方式实现 懒汉 + 饿汉 组合的方式
+public final class Singleton {
+
+  private Singleton(){}
+
+  private static class SingletonInner {
+    private static Singleton instance = new Singleton();
+  }
+
+  public static Singleton() getInstance() {
+    return SingletonInner.instance;
+  }
+}
+```
+
+### 饿汉式防止反射攻击
+
+```java
+
+public final class Singleton {
+  private static Singleton instance = new Singleton();
+
+  private Singleton(){}
+  public Singleton getInstance() {
+    return instance;
+  }
+}
+
+// 通过反射去创建 Singleton 对象
+Constructor<Singleton> constructor = Singleton.class.getDeclaredConstructor();
+constructor.setAccessible(true); // 设置私有开放
+Singleton instance = constructor.newInstance(); // 通过反射实例化了对象,破坏了单例
+```
+
+防止的方法就是在私有的构造方法中添加判断
+
+```java
+
+public final class Singleton {
+  private static Singleton instance = new Singleton();
+
+  public Singleton getInstance() {
+    return instance;
+  }
+
+
+// 在私有的构造方法中添加判断是否实例化对象不为空,因为单例的对象已经在类加载的时候就初始化完成了，后面的肯定就是非法手段获取的了
+  private Singleton(){
+    if (null != instance) {
+      throw new RuntimeException("不可以通过其他手段实例化该对象");
+    }
+  }
+}
+```
+
+### 防止反序列化攻击
+
+```java
+// 在单例的类中添加一个名为 readResolve() 的方法
+public Object readResolve() {
+  return instance;
+}
+```
+
+## ThreadLocal
+
+ThreadLocal 是线程的本地变量。
