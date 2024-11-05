@@ -182,3 +182,93 @@
   <dd>描述3</dd>
 </dl>
 ```
+
+#### 表单标签
+
+在 HTML 中一个完整的表单通常由 *表单域、表单控件（也称为表单元素）和提示信息 3 个部分构成。*
+
+表单域是一个包含表单元素的区域。
+使用 `<form>` 标签来定义表单域。
+
+```html
+<form action="url 地址", method="提交方式" name="表单域名称">
+  各种表单元素
+</form>
+```
+
+##### 输入表单元素
+
+在表单中，使用标签 `<input>` 标签收集用户信息。`<input>` 标签包含一个必须的 **type** 属性，type 不同输入的样式也不同。
+
+| 属性值   | 描述    |
+|--------------- | --------------- |
+| button   | 定义可点击按钮，多数情况下，用于通过 javascript 启动脚本   |
+| checkbox   | 定义复选框   |
+| file   | 定义输入字段和浏览按钮，供文件上传   |
+| hidden    | 定义隐藏的输入字段   |
+| image | 定义图像格式的提交按钮 |
+| password | 定义密码字段 |
+| radio | 定义单选字段 |
+| reset | 重置按钮，重置按钮会清除表单中的所有数据 |
+| submit | 定义提交按钮，提交按钮会把表单数据发送到服务器 |
+| text | 定义单行输入字段，用户可以在其中输入文本，默认宽度为 20 个字符 |
+
+```html
+<!--文本框-->
+<input type="text" name="input" value="">
+<!--密码框-->
+<input type="password" name="password" value="">
+<!--单选框，同一组的单选框 name 属性要相同-->
+<input type="radio" name="radio" value="男">
+<input type="radio" name="radio" value="女">
+<!--多选框，同一组的 name 属性要相同-->
+<input type="checkbox" name="num" value="1">
+<input type="checkbox" name="num" value="2">
+<!--提交按钮-->
+<input type="submit" name="submit" value="提交">
+<!--重置按钮-->
+<input type="reset" name="reset" value="重置">
+<!--普通按钮-->
+<input type="button" name="button" value="普通按钮">
+<!--文件域-->
+<input type="file" name="files" value="">
+
+```
+
+除了 `type` 属性外，`input`
+
+| 属性 | 属性值 | 描述 |
+| --------------- | --------------- | --------------- |
+| name | 用户自定义 | 定义 input 元素的名称 |
+| value | 用户自定义 | 规定 input 元素的值 |
+| checked | checked | 规定此 input 元素首次加载时应当被选中 |
+| maxlength | 正整数  | 规定输入字段中的字符的最大长度 |
+
+##### label 标签
+
+`<label>` 标签为 input 元素定义标签。`<label>` 标签用于绑定一个表单元素，当点击 `<label>` 标签内的文本时，
+会自动选中对应的表单元素上，增加了用户体验。
+
+```html
+<!--label 标签的 for 属性应当和相关联元素的 id 值相同-->
+<label for="sex">男</label>
+<input type="radio" name="sex" id="sex"/>
+```
+
+##### 下拉列表
+
+`select` 定义下拉列表
+
+```html
+
+<!--使用 selected 标明默认选项-->
+<select>
+  <option>选项1</option>
+  <option selected>选项2</option>
+  <option>选项3</option>
+</select>
+```
+
+##### 文本域
+
+当用户的输入较多时，就使用 `<textarea>` 标签
