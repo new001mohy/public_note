@@ -95,3 +95,79 @@ a[target="_blank"] {
   background-color: yellow;
 }
 ```
+
+## 字体属性
+
+### 字体系列
+
+CSS 使用 `font-family` 来定义文本的字体系列。
+
+```css
+div {
+  font-family: Arial, "Microsoft YaHei", "微软雅黑";
+}
+```
+
+可以设置多个字体，多个字体之间使用，分割。由多个字符串组成的名称使用引号括起来。优先级从左到右递减，如果都找不到，则使用浏览器默认字体
+
+### 字体大小
+
+```css
+p {
+  font-size: 20px;
+}
+```
+
+- px(像素)： ，绝对单位，代表屏幕中的每个点
+- em：相对单位，元素【倍数】乘以父元素 px 值
+- rem：相对单位，元素【倍数】乘以根元素的 px 值
+- %：相对单位，元素通过百分比乘以父元素的 px 值
+- medium：预设值，等于 16 px，是 h4 的预设值
+- xx-small：medium 的 0.6 倍，是 h6 的预设值
+- x-small：medium 的 0.75 倍
+- small：medium 的 0.8 倍，是 h5 的预设值
+- large：medium 的 1.1 倍，是 h3 的预设值
+- x-large：medium 的 1.5 倍，是 h2 的预设值
+- xx-large：medium 的 2 倍，是 h1 的预设值
+- smaller：约为父层的 80%
+- larger：约为父层的 120%
+
+### 字体粗细
+
+使用 `font-weight` 设置字体的粗细。
+
+```css
+p {
+  font-weight: normal;
+}
+```
+
+- normal：正常的字体，数值相当于 400
+- bold：粗体，数值相当于 700
+- bolder：特粗体
+- lighter：细体
+
+number 的范围 100~900
+
+### 字体样式
+
+CSS 使用 font-style 来设置文本的风格。
+
+```css
+p {
+  font-style: italic;
+}
+```
+
+- normal：正常的样式
+- italic：斜体样式
+
+### 混合写法
+
+```css
+p {
+  font: font-style font-weight font-size font-family;
+}
+```
+
+使用混合写法必须按照顺序书写，**不能颠倒顺序**，各个属性按空格隔开。至少需要设置 `font-size` 和 `font-family` 两个属性。
