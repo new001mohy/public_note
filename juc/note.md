@@ -417,6 +417,114 @@ public Object readResolve() {
 }
 ```
 
+## AQS
+
+AbstractQueuedSynchronizer：本质上就是一个 JUC 下的一个基础类，大多数的 JAVA 并发工具就是基于 AQS 实现。
+AQS 中有 3 点核心内容：
+
+- int state
+  - 比如 ReentrantLock 获取锁的方式都是对 state 变量做修改实现的。
+  - CountDownLatch 也是基于 state 作为计数器
+  - Semaphore 也是基于 state 记录资源的个数
+- Node 对象组成的双向链表
+  - 比如 Reentrantlock ,有一个线程没有拿到锁资源，当前的线程就需要等待，需要将线程封装为一个 Node 对象添加到双向链表中，然后挂起等待。
+- Node 对象组成的单项链表
+  - 在 synchronized 中，线程没有抢到锁会将该线程放到一个 EntryList 中，抢到锁的线程执行 wait 方法会将线程挂起，
+  记录在 WaitSet 中，在 AQS 中 比如 Reentrantlock 执行了 await() 方法，此时这个线程就需要封装到 Node 对象，并添加到单向链表中。
+
+### AQS 和 Lock 的关系
+
+Sync 是一个抽象类，定义了锁的一些操作。其实现子类有 FairSync（公平锁）和 NoFairSync（非公平锁）
+
+```java
+// 非公平锁
+final boolean initialTryLock() {
+    Thread current = Thread.currentThread();
+    // 不管当前是否有线程已经获取到锁了，直接一手 CAS 尝试获取锁一次
+    if (compareAndSetState(0, 1)) { // first attempt is unguarded
+        // 如果成功了就将当前的线程设置为拥有独占访问权的线程
+        setExclusiveOwnerThread(current);
+        return true;
+    } else if (getExclusiveOwnerThread() == current) {
+        int c = getState() + 1;
+        if (c < 0) // overflow
+            throw new Error("Maximum lock count exceeded");
+        setState(c);
+        return true;
+    } else
+        return false;
+}
+
+
+// 公平锁
+final boolean initialTryLock() {
+    Thread current = Thread.currentThread();
+    int c = getState();
+    if (c == 0) {
+        if (!hasQueuedThreads() && compareAndSetState(0, 1)) {
+            setExclusiveOwnerThread(current);
+            return true;
+        }
+    } else if (getExclusiveOwnerThread() == current) {
+        if (++c < 0) // overflow
+            throw new Error("Maximum lock count exceeded");
+        setState(c);
+        return true;
+    }
+    return false;
+}
+```
+
+## ReentrantLock
+
+Sync 隐式设置了锁，Lock 是显示设置信息。
+
+ReentrantLock 是 Lock 的默认实现
+
+1. 可重入锁：可重入锁是指同一个线程可以多次的获取同一把锁; Reentrantlock 和关键字 synchronized 都是可冲入锁。
+2. 可中断锁：可中断锁是指线程在获取锁的过程中，是否可以执行线程相应的线程中断操作。 synchronized 是不可中断的，ReentrantLock 是可中断的。
+3. 公平锁和非公平锁：公平锁是指多个线程尝试获取同一把锁时，获取锁的顺序按照线程到达的先后顺序获取，而不是随即插队的方式获取。
+synchronized 是非公平锁，ReentrantLock 两种都可以实现，默认是非公平锁。
+
+为什么有公平锁/非公平锁的设计，又为什么默认非公平呢。
+**非公平锁更能充分利用 CPU 的时间片，尽量减少 CPU 的空闲时间**
+
+```java
+private static ReentrantLock lock = new ReentrantLock();
+
+
+public void run() {
+  lock.lock();
+  // 执行方法逻辑
+  finally {
+    if (lock.isHeldByCurrentThread()) {
+      lock.unlock();
+    }
+  }
+}
+```
+
+### tryLock
+
+ReentrantLock 提供了一个尝试获取到锁的机制
+
+使用 `tryLock()` 可以选择传入的时间参数，表示等待指定的时间，无参则表示立即返回锁申请的结果。true 表示获取锁成功，false 表示获取锁失败。
+
+### 互斥锁和读写锁
+
+ReentrantReadWriteLock 提供了读锁和写锁。
+读锁之间共享读锁，写锁是互斥的。要么多个读锁一起执行，要么就只有一个写锁执行
+
 ## ThreadLocal
 
 ThreadLocal 是线程的本地变量。
+
+## hashmap
+
+hashmap 的初始容量为 16, 负载因子为 0.75
+
+## ConcurrentHashMap 的底层实现原理
+
+数据结构：Segment[] + HashEntry[] + 链表;
+
+Segment 继承了 ReentrantLock，采用分段锁(默认 16)，每把锁只作用于一个 Segment;
