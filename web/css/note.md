@@ -256,6 +256,86 @@ div {
 3. 外部链接式
 
 ```html
-<link rel="stylesheet" href="css 文件路径">
+<link rel="tylesheet" href="css 文件路径">
+```
 
+## 元素显示模式
+
+- 块级元素：宽度默认为父级元素宽度的 100%， 但是文字的元素不能再放其他盒子了
+- 行级元素：相邻元素在在一行，宽高设置无效，宽度就是里面内容的宽度，内部只能容纳文本和其他的行内元素
+- 行内块元素：img、input、td 等同时具有块元素和行内元素的特点，成为行内块元素
+
+### 模式转换
+
+- 转为块级元素：display: block;
+- 转为行内元素: display: inline;
+- 转为行内块元素: display: inline-block;
+
+## 文字垂直居中
+
+设置行高等于盒子的高度
+
+## 背景
+
+### 背景颜色
+
+```css
+background-color: transparent | color;
+/*使用rgba*/
+background-color: rgba(0,0,0,0.5)
+```
+
+### 背景图片
+
+```css
+可以方便的控制位置
+background-image: none|url;
+```
+
+### 背景平铺
+
+```css
+background-repeat: repeat | no-repeat | repeat-x | repeat-y
+```
+
+### 背景位置
+
+```css
+background-postion: x y;
+```
+
+### 背景图像固定
+
+`background-attachment` 属性设置背景图像是否固定或随着页面其余部分滚动
+
+```css
+background-attachment : scroll | fixed;
+```
+
+### 背景复合写法
+
+```css
+background: 背景颜色 背景图片 背景平铺 背景附着 背景图像位置
+```
+
+## CSS 三大特性
+
+CSS 有 3 个重要的特性：层叠性，继承性，优先级。
+
+## 选择器权重
+
+属性值后添加`!important` 的权重最大
+
+```css
+color: red
+```
+
+## 盒子模型
+
+一个盒子从内到外：content -> padding -> border -> margin
+
+### border
+
+```css
+border: border-width || border-style || border-color
 ```
